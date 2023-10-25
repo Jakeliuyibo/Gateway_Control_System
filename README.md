@@ -6,7 +6,7 @@
 * git
 * docker
 ## docker
-* 安装hyper-v、wsl2、docker desktop
+* 安装HYPER-V、WSL2、Docker Desktop
 * 配置镜像源
 ```
     "registry-mirrors": [
@@ -24,4 +24,22 @@
   ```
   root& docker run -it -p 22:22 -p 80:80 -p 8080:8080 -d -v Y:\Studyplace_Web_Development\Gateway_Control_System:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
   ```
-* 使用vscode attach到容器中进行开发（在容器中vscode服务器安装相应插件）
+* 配置完成，在本地编写代码，在容器中运行测试代码
+
+# 工程目录
+
+```
+Gateway_Control_System  
+├─ CMakeLists.txt       
+├─ docker               # docker配置文件
+├─ logs                 # 日志文件
+├─ README.md    
+├─ src                  # 源文件
+├─ test                 # 测试文件
+└─ utility              # 组件
+   ├─ logger            # 日志模块
+   ├─ rabbitmqclient    # Rabbitmq模块
+   ├─ reactor           # Reactor模块
+   ├─ systime           # 系统时间模块
+   └─ threadpool        # 线程池模块
+```
