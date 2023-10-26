@@ -1,6 +1,5 @@
 bin/*
 build/*
-lib/*
 .git/*
 .gitignore
 *.code-workspace

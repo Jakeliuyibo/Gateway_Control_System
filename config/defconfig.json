@@ -1,0 +1,6 @@
+{
+
+    "LOGGER_FOLDERPATH" : "../logs", 
+    "LOGGER_NAME"       : "m_logger"  
+
+}
