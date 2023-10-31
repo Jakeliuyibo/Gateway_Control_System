@@ -25,5 +25,6 @@ set(HEADPATH
 # 添加子目录
 
 add_subdirectory(utility)
+add_subdirectory(driver)
 add_subdirectory(app)
 add_subdirectory(test)

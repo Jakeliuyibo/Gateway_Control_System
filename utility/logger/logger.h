@@ -1,40 +1,83 @@
 #pragma once
-
+#include <iostream>
 #include <spdlog/spdlog.h>
-#include <spdlog/cfg/env.h>
-#include <spdlog/fmt/ostr.h>
+#include <spdlog/async.h>
+#include <spdlog/spdlog-inl.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/async_logger.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/details/thread_pool.h>
+#include <spdlog/details/thread_pool-inl.h>
+#include <spdlog/sinks/daily_file_sink.h>
+
+#include "singleton.h"
 
 using namespace std;
-using namespace spdlog;
 
 namespace utility
 {
+
+    #define LOGGER_NAME "g_logger"
+
+    #define trace(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::trace, __VA_ARGS__)
+    #define debug(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::debug, __VA_ARGS__)
+    #define info(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::info, __VA_ARGS__)
+    #define warning(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::warn, __VA_ARGS__)
+    #define error(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::err, __VA_ARGS__)
+    #define critical(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::critical, __VA_ARGS__)
+
+    /**
+     * @description: 基于spdlog的单例日志器
+     */
     class Logger
     {
+        // 单例模式
+        SINGLETON(Logger);
+
         public:
-            Logger(const string &folderpath)
+            enum WorkStream
             {
-                // spdlog::basic_logger_mt("m_logger", )
+                STREAM_CONSOLE = 0x1,   // 控制台
+                STREAM_FILE    = 0x2,   // 文件
+                STREAM_BOTH    = 0x3,   // 控制台 + 文件
+            };
 
+            enum WorkMode
+            {
+                MODE_SYNC      = 0x1,   // 同步
+                MODE_ASYNC     = 0x2,   // 异步
+            };
+
+            enum WorkLevel
+            {
+                LEVEL_TRACE    = 0x0,   // 跟踪
+                LEVEL_DEBUG    = 0x1,   // 调试
+                LEVEL_INFO     = 0x2,   // 信息
+                LEVEL_WARNING  = 0x3,   // 警告
+                LEVEL_ERROR    = 0x4,   // 错误
+                LEVEL_CRITICAL = 0x5,   // 重要
+                LEVEL_OFF      = 0x6,   // 关闭
+            };
+
+        public:
+            static Logger *instance()
+            {
+                static Logger ins;
+                return &ins;
             }
 
-            ~Logger()
-            {
+            bool init(  const string &filepath,
+                        const WorkStream work_stream = STREAM_BOTH,
+                        const WorkMode work_mode = MODE_SYNC, 
+                        const WorkLevel work_level = LEVEL_DEBUG,
+                        const WorkLevel level_console = LEVEL_WARNING,
+                        const WorkLevel level_file = LEVEL_DEBUG
+                        );
 
-            }
-
-            void test(void)
-            {
-                spdlog::cfg::load_env_levels();
-                spdlog::info("Welcome to spdlog version {}.{}.{}  !", SPDLOG_VER_MAJOR,  SPDLOG_VER_MINOR, SPDLOG_VER_PATCH);
-                spdlog::warn("Easy padding in numbers like {:08d}", 12);
-                spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin:  {0:b}", 42);
-                spdlog::info("Support for floats {:03.2f}", 1.23456);
-                spdlog::info("Positional args are {1} {0}..", "too", "supported");
-                spdlog::info("{:>8} aligned, {:<8} aligned", "right", "left");
-            }
-        
+            void deinit();
         private:
-            // auto logger;
+            std::shared_ptr<spdlog::logger> m_pLogger;
     };
 }

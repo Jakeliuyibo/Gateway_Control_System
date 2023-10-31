@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include <jsoncpp/json/json.h>
+#include <fstream>
 #include <boost/property_tree/ptree.hpp>  
-#include <boost/property_tree/ini_parser.hpp>
+#include "logger.h"
 
 namespace utility
 {
@@ -16,9 +16,9 @@ namespace utility
                 close();
             }
             // 读取配置文件
-            bool open(const std::string &filepath, std::string &info);
+            bool open(const std::string &filepath);
             // 读取配置文件内容
-            bool read(std::string &content, std::string &info);
+            bool read(std::string &content);
             // 关闭配置文件流
             void close();
         private:
@@ -33,41 +33,37 @@ namespace utility
     class JsonConfigParser : public ConfigParser
     {
         public:
-            bool load(const std::string &filepath, std::string &info);
+            bool load(const std::string &filepath);
 
             template<typename T>
-            bool getValue(const std::string &key,T &value, std::string &info)
+            bool getValue(const std::string &key,T &value)
             {
-                /* 检测一级成员是否存在 */
-                if(!root.isMember(key))
-                {
-                    info += "JSON data is not find key " + key;
-                    return false;
-                }
-
                 try
                 {
-                    Json::Value json_value = root[key];
-                    value = json_value.as<T>();
-                    return true;
+                    value = pt.get<T>(key);
                 }
                 catch(const std::exception& e)
                 {
-                    info += "JSON Parser can't parser key " + key;
+                    error("JSON Parser can't parser key:{}" + key);
                     return false;
                 }
+
+                return true;
             }
         private:
-            Json::Value root;
+            boost::property_tree::ptree pt;
     };
 
+    /**
+     * @description: INI配置文件解析器
+     */
     class IniConfigParser : public ConfigParser
     {
         public:
-            bool load(const std::string &filepath,std::string &info);
+            bool load(const std::string &filepath);
 
             template<typename T>
-            bool getValue(const std::string &section, const std::string &key, T &value, std::string &info)
+            bool getValue(const std::string &section, const std::string &key, T &value)
             {
                 try
                 {
@@ -75,7 +71,7 @@ namespace utility
                 }
                 catch(const std::exception& e)
                 {
-                    info += "INI Parser can't parser section " + section + ",key " + key;
+                    error("INI Parser can't parser section:{},key:{}", section, key);
                     return false;
                 }
 
