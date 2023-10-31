@@ -1,6 +1,5 @@
-#include "rabbitmqclient.h"
-
 #include "logger.h"
+#include "rabbitmqclient.h"
 
 using namespace utility;
 using namespace std;
