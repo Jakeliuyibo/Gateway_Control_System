@@ -1,24 +1,24 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(rabbitmqclient)
-
 # 搜索源文件
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC)
 
-set(RABBITMQ_PATH ${PROJECT_SOURCE_DIR}//thirdparty//rabbitmq)
+set(RABBITMQ_PATH /usr/local)
 
 # 搜索头文件
 include_directories(
-        ${HEADPATH}
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${RABBITMQ_PATH}//include
+    ${RABBITMQ_PATH}/include
+    ${HEADPATH}
+    ${CMAKE_CURRENT_SOURCE_DIR}
     )
-# 静态链接
-link_directories(${RABBITMQ_PATH}//lib)
-link_libraries(${RABBITMQ_PATH}//lib//librabbitmq.4.dll.a)
-link_directories(${LIBPATH})
-link_libraries(logger)
 
+# 生成静态库
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-
 add_library(rabbitmqclient STATIC ${SRC})
+
+# 链接本地静态库
+link_directories(${RABBITMQ_PATH}/lib)
+target_link_libraries(rabbitmqclient librabbitmq.a)
+
+link_directories(${LIBPATH})
+target_link_libraries(rabbitmqclient logger)

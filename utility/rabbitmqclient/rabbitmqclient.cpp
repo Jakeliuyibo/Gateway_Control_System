@@ -7,12 +7,12 @@ using namespace std;
 /**
  * @description: 构造函数
  */
-RabbitMqClient::RabbitMqClient(const string &hostname, int port, const string &user = "guest", const string &password = "guest") : m_hostname(hostname),
-                                                                                                                                   m_port(port),
-                                                                                                                                   m_username(user),
-                                                                                                                                   m_password(password),
-                                                                                                                                   m_conn(nullptr),
-                                                                                                                                   m_channel(1)
+RabbitMqClient::RabbitMqClient(const string &hostname, int port, const string &user, const string &password) :  m_hostname(hostname),
+                                                                                                                m_port(port),
+                                                                                                                m_username(user),
+                                                                                                                m_password(password),
+                                                                                                                m_conn(nullptr),
+                                                                                                                m_channel(1)
 {
 }
 
@@ -21,7 +21,7 @@ RabbitMqClient::RabbitMqClient(const string &hostname, int port, const string &u
  */
 RabbitMqClient::~RabbitMqClient()
 {
-    disconnect();
+
 }
 
 /*************************************************************************

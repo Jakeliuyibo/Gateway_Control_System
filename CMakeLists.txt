@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.12)
 project(Middleware_development)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 # 定义变量
+# 工程目录
+set(PROJECT_DIR ${PROJECT_SOURCE_DIR})
 # 静态库生成的路径
 set(LIBPATH ${PROJECT_SOURCE_DIR}/lib)
 
@@ -12,19 +14,19 @@ set(EXECPATH ${PROJECT_SOURCE_DIR}/bin)
 
 # 头文件的路径
 set(HEADPATH
-    ${PROJECT_SOURCE_DIR}//utility//logger
-    ${PROJECT_SOURCE_DIR}//utility//configparser
-	${PROJECT_SOURCE_DIR}//utility//systime
-	${PROJECT_SOURCE_DIR}//utility//singleton
-    # ${PROJECT_SOURCE_DIR}//utility//rabbitmqclient
-    # ${PROJECT_SOURCE_DIR}//thirdparty//rabbitmq/include
+    ${PROJECT_DIR}/utility/logger
+    ${PROJECT_DIR}/utility/configparser
+	${PROJECT_DIR}/utility/systime
+	${PROJECT_DIR}/utility/singleton
+    ${PROJECT_DIR}/utility/rabbitmqclient
+	${PROJECT_DIR}/reactor
+    # ${PROJECT_SOURCE_DIR}//thirdparty//rabbitmq-c//include
 	# ${PROJECT_SOURCE_DIR}//utility//reactor
 	# ${PROJECT_SOURCE_DIR}//utility//threadpool
 	)
 
 # 添加子目录
-
 add_subdirectory(utility)
 add_subdirectory(driver)
-add_subdirectory(app)
+add_subdirectory(reactor)
 add_subdirectory(test)

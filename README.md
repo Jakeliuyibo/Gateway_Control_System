@@ -9,7 +9,7 @@
 * git
 
 * docker
-  
+
 ## docker
 
 * 安装HYPER-V、WSL2、Docker Desktop
@@ -36,7 +36,8 @@
 * 启动容器
   
   ```
-  root& docker run -it -p 22:22 -p 80:80 -p 8080:8080 -d -v Y:\Studyplace_Web_Development\Gateway_Control_System:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
+  <!-- root& docker run -it -p 22:22 -p 80:80 -p 1234:1234 -p 5672:5672 -p 8080:8080 -p 15672:15672 -d -v Y:\Studyplace_Web_Development\Gateway_Control_System:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1 -->
+  root& docker run -it -P -d --network bridge -v Y:\Studyplace_Web_Development\Gateway_Control_System:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
   ```
 
 * 配置完成，在本地编写代码，在容器中运行测试代码

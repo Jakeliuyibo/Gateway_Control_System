@@ -73,7 +73,7 @@ namespace utility
     class RabbitMqClient
     {
         public:
-            RabbitMqClient(const string &hostname, int port, const string &user, const string &password);
+            RabbitMqClient(const string &hostname, int port, const string &user = "guest", const string &password = "guest");
             ~RabbitMqClient();
         public:
             // 连接服务器
