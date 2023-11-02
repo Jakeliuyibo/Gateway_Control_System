@@ -6,7 +6,7 @@
 
 * vscode(cmake\git\c++\gdb\Remote Development等插件)
 
-* git
+* git 1
 
 * docker
 
