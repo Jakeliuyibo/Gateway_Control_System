@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <jsoncpp/json/json.h>
 #include "logger.h"
 
@@ -47,26 +48,63 @@ namespace reactor
             Json::Value m_obj;
     };
 
-
-    class DeviceEvent : Event
+    /**
+     * @description: 设备事件
+     */
+    class DeviceEvent : public Event
     {
         public:
             enum EventType
             {
-                EVENT_INIT  = 0x1,   // 事件：初始化设备
-                EVENT_READ  = 0x2,   // 事件：读取设备
-                EVENT_WRITE = 0x3,   // 事件：写入设备
-                EVENT_OTHER = 0x4,   // 其他事件
+                EVENT_INIT  = 0x1,      // 事件：初始化设备
+                EVENT_READ  = 0x2,      // 事件：读取设备
+                EVENT_WRITE = 0x3,      // 事件：写入设备
+                EVENT_OTHER = 0x4,      // 其他事件
             };
 
-            DeviceEvent();
-            ~DeviceEvent();
-            
+            std::unordered_map<EventType, std::string> EventTypeMapping = {
+                {EVENT_INIT , "init"},
+                {EVENT_READ , "read"},
+                {EVENT_WRITE, "write"},
+                {EVENT_OTHER, "other"}
+            };
+
+            // 构造
+            DeviceEvent(EventType type, std::string device, std::string action)
+                :   m_type(type),
+                    m_device(device),
+                    m_action(action) 
+            {
+                add("type"  , EventTypeMapping[m_type]);
+                add("device", m_device);
+                add("action", m_action);
+            }
+            DeviceEvent(std::string ser)
+            {
+                deserial(ser);
+                m_device = get("device");
+                m_action = get("action");
+                std::string type_desc = get("type");
+                for(auto &it : EventTypeMapping)
+                {
+                    if(it.second == type_desc)
+                    {
+                        m_type = it.first;
+                        break;
+                    }
+                }
+            }
+
+            // 析构
+            ~DeviceEvent()
+            {
+
+            }
         private:
-            
+            EventType   m_type;         // 事件类型
+            std::string m_device;       // 设备
+            std::string m_action;       // 动作
     };
 
-        // // 反序列化
-        // Event * from_str(std::string str);
 
 }

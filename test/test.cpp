@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include <uv.h>
 #include "systime.h"
 #include "logger.h"
@@ -23,18 +24,14 @@ int main()
     parserFlag = parser.load("../config/defconfig.ini");
 
     /* 初始化队列               */
-    Queue queue(&parser);
-    queue.push("hello hhh");
-    cout << queue.pop() << endl;
+    Queue q(&parser);
 
-    Event event;
-    event.add("a", "123");
-    event.add("b", "123");
-    event.deserial("{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}");
-    cout << event.get("a") << endl;
-    cout << event.get("b") << endl;
-    cout << event.serial() << endl;
 
+    DeviceEvent de(DeviceEvent::EVENT_INIT, "eth0", "../a.txt");
+    q.push(de.serial());
+
+    DeviceEvent pe(q.pop());
+    cout << pe.serial() << endl;
 
     /* 注销日志模块             */
     critical("program end ...");
