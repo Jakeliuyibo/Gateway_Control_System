@@ -24,7 +24,8 @@ RUN    rm /etc/apt/sources.list                                                 
 RUN    apt-get install -y libspdlog-dev                                                                                                         \
     && apt-get install -y libboost-all-dev                                                                                                      \
     && apt-get install -y libuv1-dev                                                                                                            \                           
-    && apt-get install -y erlang rabbitmq-server                                                                    
+    && apt-get install -y erlang rabbitmq-server                                                                                                \
+    && apt-get install -y libjsoncpp-dev
 
 # 安装rabbitmq-server环境(TODO 开启自启动服务)
 RUN    service rabbitmq-server start                                                                                                            \

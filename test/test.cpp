@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "configparser.h"
 #include "queue.h"
+#include "event.h"
 
 using namespace std;
 using namespace utility;
@@ -25,6 +26,15 @@ int main()
     Queue queue(&parser);
     queue.push("hello hhh");
     cout << queue.pop() << endl;
+
+    Event event;
+    event.add("a", "123");
+    event.add("b", "123");
+    event.deserial("{\"name\":\"John\", \"age\":30, \"city\":\"New York\"}");
+    cout << event.get("a") << endl;
+    cout << event.get("b") << endl;
+    cout << event.serial() << endl;
+
 
     /* 注销日志模块             */
     critical("program end ...");
