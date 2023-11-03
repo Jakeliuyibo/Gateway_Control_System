@@ -3,4 +3,5 @@ logs/*
 lib/*
 build/*
 .git/*
+.vscode/*
 *.code-workspace

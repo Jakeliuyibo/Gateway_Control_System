@@ -45,17 +45,37 @@
 # 工程目录
 
 ```
-Gateway_Control_System  
-├─ CMakeLists.txt       
-├─ docker               # docker配置文件
-├─ logs                 # 日志文件
-├─ README.md    
-├─ src                  # 源文件
-├─ test                 # 测试文件
-└─ utility              # 组件
-   ├─ logger            # 日志模块
-   ├─ rabbitmqclient    # Rabbitmq模块
-   ├─ reactor           # Reactor模块
-   ├─ systime           # 系统时间模块
-   └─ threadpool        # 线程池模块
+Gateway_Control_System
+├─ 📁.vscode
+├─ 📁bin
+├─ 📁build
+├─ 📁config
+│  └─ 📄defconfig.ini
+├─ 📁docker
+│  └─ 📄Dockerfile
+├─ 📁driver
+│  ├─ 📁ethernet
+│  ├─ 📁opticalfiber
+│  ├─ 📁radiodigital
+│  ├─ 📁satellite
+│  ├─ 📁serial
+│  ├─ 📁underwateracoustic
+│  └─ 📄功能说明.md
+├─ 📁lib
+├─ 📁logs
+├─ 📁reactor
+│  └─ 📄功能需求.md
+├─ 📁test
+├─ 📁utility
+│  ├─ 📁configparser
+│  ├─ 📁logger
+│  ├─ 📁mysqlpool
+│  ├─ 📁rabbitmqclient
+│  ├─ 📁singleton
+│  ├─ 📁systime
+│  ├─ 📁threadpool
+│  └─ 📄功能需求.md
+├─ 📄.gitignore
+├─ 📄CMakeLists.txt
+└─ 📄README.md
 ```
