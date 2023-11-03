@@ -25,9 +25,7 @@ int main()
 
     /* 初始化队列               */
     Queue q(&parser);
-
-
-    DeviceEvent de(DeviceEvent::EVENT_INIT, "eth0", "../a.txt");
+    DeviceEvent de(123, DeviceEvent::EVENT_INIT, "eth0", "../a.txt");
     q.push(de.serial());
 
     DeviceEvent pe(q.pop());

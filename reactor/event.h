@@ -18,32 +18,13 @@ namespace reactor
             // 析构
             ~Event() {}
             // 添加属性
-            void add(std::string key, std::string val)
-            {
-                m_obj[key] = val;
-            }
+            void add(std::string key, std::string val);
             // 获取值
-            std::string get(std::string key)
-            {
-                if(!m_obj.isMember(key))
-                {
-                    error("Event Json-Obj not contains key {}", key);
-                    return "";
-                }
-
-                return m_obj[key].asString();
-            }
+            std::string get(std::string key);
             // 序列化
-            std::string serial()
-            {
-                return m_obj.toStyledString();
-            }
+            std::string serial();
             // 反序列化
-            void deserial(std::string ser)
-            {
-                Json::Reader reader;
-                reader.parse(ser, m_obj);
-            }
+            void deserial(std::string ser);
         private:
             Json::Value m_obj;
     };
@@ -70,30 +51,8 @@ namespace reactor
             };
 
             // 构造
-            DeviceEvent(EventType type, std::string device, std::string action)
-                :   m_type(type),
-                    m_device(device),
-                    m_action(action) 
-            {
-                add("type"  , EventTypeMapping[m_type]);
-                add("device", m_device);
-                add("action", m_action);
-            }
-            DeviceEvent(std::string ser)
-            {
-                deserial(ser);
-                m_device = get("device");
-                m_action = get("action");
-                std::string type_desc = get("type");
-                for(auto &it : EventTypeMapping)
-                {
-                    if(it.second == type_desc)
-                    {
-                        m_type = it.first;
-                        break;
-                    }
-                }
-            }
+            DeviceEvent(int id, EventType type, std::string device, std::string action);
+            DeviceEvent(std::string ser);
 
             // 析构
             ~DeviceEvent()
@@ -101,6 +60,7 @@ namespace reactor
 
             }
         private:
+            int         m_id;           // ID
             EventType   m_type;         // 事件类型
             std::string m_device;       // 设备
             std::string m_action;       // 动作
