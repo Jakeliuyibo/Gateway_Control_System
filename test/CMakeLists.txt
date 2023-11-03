@@ -10,6 +10,10 @@ include_directories(/usr/include)
 link_directories(/usr/lib/x86_64-linux-gnu)
 link_libraries(uv)
 
+
 # 设置输出路径并生成可执行文件
 set(EXECUTABLE_OUTPUT_PATH ${EXECPATH})
+
+
 add_executable(test test.cpp)
+add_executable(test_serial test_serial.cpp)
