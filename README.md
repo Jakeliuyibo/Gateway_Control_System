@@ -36,7 +36,7 @@
 * 启动容器
   
   ```
-  root& docker run -it -P -d --network bridge -v Y:\Studyplace_Web_Development\Gateway_Control_System:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
+  root& docker run -it -P -d --network bridge -v [${PROJECT_DIR}]:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
   ```
 
 * 配置完成，通过vscode附加到运行的容器环境
