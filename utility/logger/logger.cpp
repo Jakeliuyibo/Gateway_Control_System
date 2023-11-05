@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 
 #include "logger.h"
@@ -5,7 +6,7 @@
 using namespace utility;
 
 
-bool Logger::init(  const string &filepath,
+bool Logger::init(  const std::string &filepath,
                     const WorkStream work_stream,
                     const WorkMode work_mode,
                     const WorkLevel work_level,

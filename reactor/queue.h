@@ -18,9 +18,9 @@ namespace reactor
             // 析构
             ~Queue();
             // 事件入队
-            void push(string msg);
+            void push(std::string msg);
             // 事件出队
-            string pop();
+            std::string pop();
         private:
             std::unique_ptr<RabbitMqClient> m_pQueue;
             std::string m_exchangename;

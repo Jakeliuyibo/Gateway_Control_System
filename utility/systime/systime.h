@@ -1,11 +1,11 @@
 #pragma once
 
-using namespace std;
+#include <string>
 
 namespace utility 
 {
     // 获取系统时间
-    string getSystime();
+    std::string getSystime();
     // 获取系统时间，文件名格式
-    string getSystimeByFilenameFormat();
+    std::string getSystimeByFilenameFormat();
 }

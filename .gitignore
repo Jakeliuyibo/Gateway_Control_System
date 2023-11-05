@@ -1,7 +1,9 @@
 bin/*
 logs/*
+*.log
 build/*
-lib/*
+lib/
+libs/
 .git/*
 .vscode/*
 *.code-workspace

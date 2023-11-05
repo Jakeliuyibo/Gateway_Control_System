@@ -1,14 +1,12 @@
 #include <time.h>
 #include <string.h>
-#include <string>
 
 #include "systime.h"
 
-using namespace std;
 using namespace utility;
 
 // 获取系统时间
-string utility::getSystime()
+std::string utility::getSystime()
 {
     time_t ticks = time(NULL);
     struct tm *ptm = localtime(&ticks);
@@ -19,7 +17,7 @@ string utility::getSystime()
 }
 
 // 获取系统时间，文件名格式
-string utility::getSystimeByFilenameFormat()
+std::string utility::getSystimeByFilenameFormat()
 {
     time_t ticks = time(NULL);
     struct tm *ptm = localtime(&ticks);

@@ -1,5 +1,6 @@
 #pragma once
-#include <iostream>
+#include <string>
+#include <memory>
 #include <spdlog/spdlog.h>
 #include <spdlog/async.h>
 #include <spdlog/spdlog-inl.h>
@@ -13,8 +14,6 @@
 #include <spdlog/sinks/daily_file_sink.h>
 
 #include "singleton.h"
-
-using namespace std;
 
 namespace utility
 {
@@ -68,7 +67,7 @@ namespace utility
                 return &ins;
             }
 
-            bool init(  const string &filepath,
+            bool init(  const std::string &filepath,
                         const WorkStream work_stream = STREAM_BOTH,
                         const WorkMode work_mode = MODE_SYNC, 
                         const WorkLevel work_level = LEVEL_DEBUG,

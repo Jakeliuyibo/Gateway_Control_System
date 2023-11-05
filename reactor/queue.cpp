@@ -38,7 +38,7 @@ Queue::~Queue()
 }
 
 // 事件入队
-void Queue::push(string msg)
+void Queue::push(std::string msg)
 {
     CMessage message(msg);
     m_pQueue->publish(m_exchangename, m_routingkey, message);
@@ -47,9 +47,9 @@ void Queue::push(string msg)
 }
 
 // 事件出队
-string Queue::pop()
+std::string Queue::pop()
 {
-    string msg = m_pQueue->consume(m_queuename);
+    std::string msg = m_pQueue->consume(m_queuename);
 
     info("RabbitMq client pop msg, {}", msg);
 

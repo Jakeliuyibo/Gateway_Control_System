@@ -6,14 +6,13 @@
 #include "rabbitmq-c/amqp.h"
 #include "rabbitmq-c/tcp_socket.h"
 
-using namespace std;
 
 namespace utility
 {
     class CExchange
     {
         public:
-            CExchange(const string &name, const string &type, bool passive=false, bool durable=true, bool internal=false, bool autodelete=false) :
+            CExchange(const std::string &name, const std::string &type, bool passive=false, bool durable=true, bool internal=false, bool autodelete=false) :
                 m_name(name),
                 m_type(type),
                 m_passive(passive),
@@ -22,8 +21,8 @@ namespace utility
                 m_autodelete(autodelete) {}
             ~CExchange() {}
         public:
-            string m_name;          // 交换机名称
-            string m_type;          // 交换机类型：direct、topic、fanout、
+            std::string m_name;     // 交换机名称
+            std::string m_type;     // 交换机类型：direct、topic、fanout、
             bool   m_passive;       // 检测交换机是否已存在。设为true时，不存在则不会创建；设为false时，不存在则创建
             bool   m_durable;       // 交换机内数据是否持久化
             bool   m_internal;      // 
@@ -33,7 +32,7 @@ namespace utility
     class CQueue
     {
         public:
-            CQueue(const string &name, bool passive=false, bool durable=true, bool exclusive=false, bool autodelete=false) :
+            CQueue(const std::string &name, bool passive=false, bool durable=true, bool exclusive=false, bool autodelete=false) :
                 m_name(name),
                 m_passive(passive),
                 m_durable(durable),
@@ -41,7 +40,7 @@ namespace utility
                 m_autodelete(autodelete) {}
             ~CQueue() {}
         public:
-            string m_name;          // 队列名称
+            std::string m_name;     // 队列名称
             bool   m_passive;       // 检测队列是否存在
             bool   m_durable;       // 队列中的消息是否持久化
             bool   m_exclusive;     // 是否声明为排他队列。设为true时，仅对首次声明他的连接可见，并在断开连接后自动删除
@@ -51,7 +50,7 @@ namespace utility
     class CMessage
     {
         public:
-            CMessage(const string &data, bool mandatory=true, bool immediate=false, bool is_durable=true) :
+            CMessage(const std::string &data, bool mandatory=true, bool immediate=false, bool is_durable=true) :
                 m_data(data),
                 m_mandatory(mandatory),
                 m_immediate(immediate)
@@ -64,7 +63,7 @@ namespace utility
             }
             ~CMessage() {}
         public:
-            string m_data;          // 数据
+            std::string m_data;     // 数据
             bool   m_mandatory;     // 消息必须路由到存在的队列
             bool   m_immediate;     // 立即发送到消费者
             amqp_basic_properties_t m_properties{0};     // 属性
@@ -73,7 +72,7 @@ namespace utility
     class RabbitMqClient
     {
         public:
-            RabbitMqClient(const string &hostname, int port, const string &user = "guest", const string &password = "guest");
+            RabbitMqClient(const std::string &hostname, int port, const std::string &user = "guest", const std::string &password = "guest");
             ~RabbitMqClient();
         public:
             // 连接服务器
@@ -85,31 +84,31 @@ namespace utility
             // 初始化队列
             int declareQueue(CQueue &queue);
             // 将指定队列绑定到交换机上
-            int bindQueueToExchange(const string &queue, const string &exchange, const string &bindkey);
+            int bindQueueToExchange(const std::string &queue, const std::string &exchange, const std::string &bindkey);
             // 取消队列到交换机的绑定
-            int unbingQueueToExchange(CQueue &queue, CExchange &exchange, const string &bindkey);
+            int unbingQueueToExchange(CQueue &queue, CExchange &exchange, const std::string &bindkey);
             // 发布消息
-            int publish(const string &exchange_name, const string &routing_key_name, const CMessage &message);
+            int publish(const std::string &exchange_name, const std::string &routing_key_name, const CMessage &message);
             // 同步方式消费一条消息
-            string consume(const string &queue_name, bool no_ack=true);
+            std::string consume(const std::string &queue_name, bool no_ack=true);
             // 同步方式消费多条消息
-            vector<string> consume(const string &queue_name, int num, bool no_ack=true);
+            std::vector<std::string> consume(const std::string &queue_name, int num, bool no_ack=true);
             // 非阻塞方式消费一条消息
-            string consume(const string &queue_name, struct timeval *timeout, bool no_ack=true);
+            std::string consume(const std::string &queue_name, struct timeval *timeout, bool no_ack=true);
             // 非阻塞方式消费多条消息
-            vector<string> consume(const string &queue_name, int num, struct timeval *timeout, bool no_ack=true);
+            std::vector<std::string> consume(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack=true);
 
         private:
             // 处理错误信息
-            int errorMsg(const amqp_rpc_reply_t &reply, const string & desc);
+            int errorMsg(const amqp_rpc_reply_t &reply, const std::string & desc);
 
         private:
-            string m_hostname;              // 主机
-            int m_port;                     // 端口
-            string m_username;              // 用户名
-            string m_password;              // 密码
-            amqp_connection_state_t m_conn; // AMQP连接
-            int m_channel;                  // 通道
+            std::string m_hostname;              // 主机
+            int m_port;                          // 端口
+            std::string m_username;              // 用户名
+            std::string m_password;              // 密码
+            amqp_connection_state_t m_conn;      // AMQP连接
+            int m_channel;                       // 通道
     };
 
     // 获取RabbitMq版本
