@@ -20,6 +20,12 @@ Queue::Queue(IniConfigParser *parser)
     parserFlag &= parser->getValue<std::string>("RABBITMQ", "RABBITMQ_QUEUENAME"   , m_queuename);
     parserFlag &= parser->getValue<std::string>("RABBITMQ", "RABBITMQ_ROUTINGKEY"  , m_routingkey);
 
+    if(!parserFlag)
+    {
+        error("Init rabbitmq queue failed, when load config");
+        return;
+    }
+
     /* 初始化RabbitMq Client模块 */
     m_pQueue = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
     CExchange ex(m_exchangename, "direct");

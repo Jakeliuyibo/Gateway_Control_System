@@ -9,7 +9,7 @@
 #include "threadpool.h"
 #include "queue.h"
 #include "event.h"
-
+#include "processor.h"
 
 using namespace std;
 using namespace utility;
@@ -43,15 +43,14 @@ int main()
     // DeviceEvent pe(q.pop());
     // cout << pe.serial() << endl;
 
-
     /* 测试线程池 */
-    ThreadPool pool(10);
+    Processor processor(&parser);
     for(int idx=1; idx<10; idx++)
     {
-        auto fut = pool.submit(threadFunc, idx);
-        // cout << "idx result = " << fut.get() << endl;
+        auto fut = processor.submit(threadFunc, idx);
+        cout << "idx result = " << fut.get() << endl;
     }
-    pool.shutdown();
+    processor.shutdown();
 
     /* 注销日志模块             */
     critical("program end ...");

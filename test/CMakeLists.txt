@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 # 本地引用
 include_directories(${HEADPATH})
 link_directories(${LIBPATH})
-link_libraries(systime logger configparser threadpool queue event)
+link_libraries(systime logger configparser threadpool queue event processor)
 
 # 第三方库引用
 include_directories(/usr/include)

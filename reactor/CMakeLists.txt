@@ -23,3 +23,8 @@ add_library(event STATIC ${SRC})
 link_directories(${LIBPATH})
 find_package(jsoncpp REQUIRED)
 target_link_libraries(event logger jsoncpp)
+
+# 生成queue静态库，并进行链接
+add_library(processor STATIC ${SRC})
+link_directories(${LIBPATH})
+target_link_libraries(processor logger configparser threadpool)

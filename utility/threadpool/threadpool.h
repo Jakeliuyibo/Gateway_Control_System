@@ -32,7 +32,6 @@ namespace utility
             // 关闭线程池
             void shutdown();
             // 添加任务
-            // -> std::future<typename std::result_of<F(Args...)>::type>    
             template<class F, class... Args>
             auto submit(F &&f, Args&&... args) -> std::future<decltype(f(args...))>
             {
