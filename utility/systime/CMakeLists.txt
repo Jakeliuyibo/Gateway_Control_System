@@ -1,4 +1,4 @@
-project(systime)
+cmake_minimum_required(VERSION 3.12)
 
 # 搜索源文件
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC)

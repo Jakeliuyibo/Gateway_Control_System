@@ -19,10 +19,9 @@ set(HEADPATH
 	${PROJECT_DIR}/utility/systime
 	${PROJECT_DIR}/utility/singleton
     ${PROJECT_DIR}/utility/rabbitmqclient
+	${PROJECT_DIR}/utility/safequeue
+	${PROJECT_DIR}/utility/threadpool
 	${PROJECT_DIR}/reactor
-    # ${PROJECT_SOURCE_DIR}//thirdparty//rabbitmq-c//include
-	# ${PROJECT_SOURCE_DIR}//utility//reactor
-	# ${PROJECT_SOURCE_DIR}//utility//threadpool
 	)
 
 # 添加子目录

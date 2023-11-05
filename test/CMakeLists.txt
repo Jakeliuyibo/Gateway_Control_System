@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 # 本地引用
 include_directories(${HEADPATH})
 link_directories(${LIBPATH})
-link_libraries(systime logger configparser queue event)
+link_libraries(systime logger configparser threadpool queue event)
 
 # 第三方库引用
 include_directories(/usr/include)
@@ -13,7 +13,6 @@ link_libraries(uv)
 
 # 设置输出路径并生成可执行文件
 set(EXECUTABLE_OUTPUT_PATH ${EXECPATH})
-
 
 add_executable(test test.cpp)
 add_executable(test_serial test_serial.cpp)
