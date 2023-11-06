@@ -89,14 +89,14 @@ namespace utility
             int unbingQueueToExchange(CQueue &queue, CExchange &exchange, const std::string &bindkey);
             // 发布消息
             int publish(const std::string &exchange_name, const std::string &routing_key_name, const CMessage &message);
-            // 同步方式消费一条消息
-            std::string consume(const std::string &queue_name, bool no_ack=true);
-            // 同步方式消费多条消息
-            std::vector<std::string> consume(const std::string &queue_name, int num, bool no_ack=true);
-            // 非阻塞方式消费一条消息
-            std::string consume(const std::string &queue_name, struct timeval *timeout, bool no_ack=true);
-            // 非阻塞方式消费多条消息
-            std::vector<std::string> consume(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack=true);
+
+            // 非阻塞方式消费
+            std::string consume_nb(const std::string &queue_name, bool no_ack=true);
+            std::vector<std::string> consume_nb(const std::string &queue_name, int num, bool no_ack=true);
+
+            // 阻塞方式消费
+            std::string consume_b(const std::string &queue_name, struct timeval *timeout, bool no_ack=true);
+            std::vector<std::string> consume_b(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack=true);
 
         private:
             // 处理错误信息

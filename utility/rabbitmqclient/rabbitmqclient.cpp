@@ -208,101 +208,22 @@ int RabbitMqClient::publish(const std::string &exchange_name, const std::string 
     return 0;
 }
 
-/**
- * @description: 非阻塞方式获取一条消息
- */
-std::string RabbitMqClient::consume(const std::string &queue_name, struct timeval *timeout, bool no_ack)
-{
-    std::vector<std::string> vec_msg = consume(queue_name, 1, timeout, no_ack);
-    if(vec_msg.size() != 1)
-    {
-        error("Try to consume one message from rabbitmq server, but get null or more than one");
-        return "";
-    }
-
-    return vec_msg[0];
-}
 
 /**
- * @description: 非阻塞方式获取多条消息，底层为consume实现，本地一次拉取服务器所有消息，依次由客户端消费
+ * @description: 非阻塞方式消费，底层以amqp的get和read方法实现，每次主动向服务器拉取一条消息
  */
-std::vector<std::string> RabbitMqClient::consume(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack)
+std::string RabbitMqClient::consume_nb(const std::string &queue_name, bool no_ack)
 {
-    std::vector<std::string> ret_msg;
-
-    /* 1、设置通道消费的限制 */
-    amqp_basic_qos_ok_t *retQosOk = amqp_basic_qos(m_conn,
-                                                   m_channel,
-                                                   0,       // 预取消息的字节数prefetch_size 0：不限制大小
-                                                   num,     // 预取消息的数量prefetch_count 1：取1条消息
-                                                   false);  // 是否将预取条件应用到整个通道 0：不应用
-    if (!retQosOk)
-    {
-        errorMsg(amqp_get_rpc_reply(m_conn), "Set consumer limit(qos)");
-        return ret_msg;
-    }
-
-    /* 2、创建消费者 */
-    amqp_basic_consume_ok_t *retBasicConsume = amqp_basic_consume(m_conn,
-                                                                  m_channel,
-                                                                  amqp_cstring_bytes(queue_name.c_str()),
-                                                                  amqp_empty_bytes,
-                                                                  false,  // no_local 0:接收 1:不接收
-                                                                  no_ack, // no_ack 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
-                                                                  false,  // exclusive 0:不独占 1:当前连接不在时队列自动删除
-                                                                  amqp_empty_table);
-    if (!retBasicConsume)
-    {
-        errorMsg(amqp_get_rpc_reply(m_conn), "Consumer basic");
-        return ret_msg;
-    }
-
-    while (num--)
-    {
-        /* 3、消费 */
-        amqp_envelope_t envelope;
-        int isConsume = errorMsg(amqp_consume_message(m_conn, &envelope, timeout, 0), "Consume message");
-        if (isConsume < 0)
-        {
-            error("Faild to consume no.%d message from rabbitmq server", num);
-            return ret_msg;
-        }
-
-        /* 4、封装消息 */
-        ret_msg.emplace_back(std::string((char *)envelope.message.body.bytes, (char *)envelope.message.body.bytes + envelope.message.body.len));
-
-        /* 5、应答ACK */
-        if(no_ack == false)
-        {
-            amqp_basic_ack(m_conn, m_channel, envelope.delivery_tag, false);
-        }
-
-        /* 6、删除封装容器 */
-        amqp_destroy_envelope(&envelope);
-    }
-
-    return ret_msg;
-}
-
-/**
- * @description: 同步方式消费一条消息
- */
-std::string RabbitMqClient::consume(const std::string &queue_name, bool no_ack)
-{
-    std::vector<std::string> vec_msg = consume(queue_name, 1, no_ack);
+    std::vector<std::string> vec_msg = consume_nb(queue_name, 1, no_ack);
     if (vec_msg.size() != 1)
     {
-        error("Try to get one message from rabbitmq server, but get null or more than one");
+        warning("Try to get one message from rabbitmq server, but get null or more than one");
         return "";
     }
 
     return vec_msg[0];
 }
-
-/**
- * @description: 同步方式消费多条消息，底层以amqp的get和read方法实现，每次向服务器拉取一条消息
- */
-std::vector<std::string> RabbitMqClient::consume(const std::string &queue_name, int num, bool no_ack)
+std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_name, int num, bool no_ack)
 {
     std::vector<std::string> ret_msg;
 
@@ -354,6 +275,80 @@ std::vector<std::string> RabbitMqClient::consume(const std::string &queue_name, 
     return ret_msg;
 }
 
+
+/**
+ * @description: 阻塞方式消费，底层为consume实现，本地被动一次性拉取服务器所有消息，依次由客户端消费
+ */
+std::string RabbitMqClient::consume_b(const std::string &queue_name, struct timeval *timeout, bool no_ack)
+{
+    std::vector<std::string> vec_msg = consume_b(queue_name, 1, timeout, no_ack);
+    if(vec_msg.size() != 1)
+    {
+        warning("Try to consume one message from rabbitmq server, but get null or more than one");
+        return "";
+    }
+
+    return vec_msg[0];
+}
+
+std::vector<std::string> RabbitMqClient::consume_b(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack)
+{
+    std::vector<std::string> ret_msg;
+
+    /* 1、设置通道消费的限制 */
+    amqp_basic_qos_ok_t *retQosOk = amqp_basic_qos(m_conn,
+                                                   m_channel,
+                                                   0,       // 预取消息的字节数prefetch_size 0：不限制大小
+                                                   num,     // 预取消息的数量prefetch_count 1：取1条消息
+                                                   false);  // 是否将预取条件应用到整个通道 0：不应用
+    if (!retQosOk)
+    {
+        errorMsg(amqp_get_rpc_reply(m_conn), "Set consumer limit(qos)");
+        return ret_msg;
+    }
+
+    /* 2、创建消费者 */
+    amqp_basic_consume_ok_t *retBasicConsume = amqp_basic_consume(m_conn,
+                                                                  m_channel,
+                                                                  amqp_cstring_bytes(queue_name.c_str()),
+                                                                  amqp_empty_bytes,
+                                                                  false,  // no_local 0:接收 1:不接收
+                                                                  no_ack, // no_ack 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
+                                                                  false,  // exclusive 0:不独占 1:当前连接不在时队列自动删除
+                                                                  amqp_empty_table);
+    if (!retBasicConsume)
+    {
+        errorMsg(amqp_get_rpc_reply(m_conn), "Consumer basic");
+        return ret_msg;
+    }
+
+    while (num--)
+    {
+        /* 3、消费 */
+        amqp_envelope_t envelope;
+        int isConsume = errorMsg(amqp_consume_message(m_conn, &envelope, timeout, 0), "Consume message");
+        if (isConsume < 0)
+        {
+            error("Faild to consume no.{} message from rabbitmq server", num);
+            return ret_msg;
+        }
+
+        /* 4、封装消息 */
+        ret_msg.emplace_back(std::string((char *)envelope.message.body.bytes, (char *)envelope.message.body.bytes + envelope.message.body.len));
+
+        /* 5、应答ACK */
+        if(no_ack == false)
+        {
+            amqp_basic_ack(m_conn, m_channel, envelope.delivery_tag, false);
+        }
+
+        /* 6、删除封装容器 */
+        amqp_destroy_envelope(&envelope);
+    }
+
+    return ret_msg;
+}
+
 /*************************************************************************
  *
  * Private Function
@@ -370,13 +365,13 @@ int RabbitMqClient::errorMsg(const amqp_rpc_reply_t &reply, const std::string &d
     case AMQP_RESPONSE_NORMAL:
         return 0;
     case AMQP_RESPONSE_NONE:
-        error("RabbitMQ AMQP Response None Error, where is occured in %s", desc.c_str());
+        error("RabbitMQ AMQP Response None Error, where is occured in {}", desc.c_str());
         break;
     case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-        error("RabbitMQ AMQP Response Library Error, where is occured in %s", desc.c_str());
+        error("RabbitMQ AMQP Response Library Error, where is occured in {}", desc.c_str());
         break;
     case AMQP_RESPONSE_SERVER_EXCEPTION:
-        error("RabbitMQ AMQP Response Server Error, where is occured in %s", desc.c_str());
+        error("RabbitMQ AMQP Response Server Error, where is occured in {}", desc.c_str());
         break;
     default:
         break;
