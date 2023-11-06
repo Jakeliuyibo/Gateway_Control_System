@@ -1,11 +1,11 @@
 #include <iostream>
-#include "queue.h"
+#include "source.h"
 
 using namespace utility;
 using namespace reactor;
 
 
-Queue::Queue(IniConfigParser *parser)
+Source::Source(IniConfigParser *parser)
 {
     bool parserFlag = true;
 
@@ -26,38 +26,50 @@ Queue::Queue(IniConfigParser *parser)
         return;
     }
 
-    /* 初始化RabbitMq Client模块 */
-    m_pQueue = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
-    CExchange ex(m_exchangename, "direct");
-    CQueue qu(m_queuename);
+    {
+        std::unique_lock<std::mutex> wlock(m_wlock);
+        std::unique_lock<std::mutex> rlock(m_rlock);
 
-    m_pQueue->connect();
-    m_pQueue->declareExchange(ex);
-    m_pQueue->declareQueue(qu);
-    m_pQueue->bindQueueToExchange(m_queuename, m_exchangename, m_routingkey);
+        /* 初始化RabbitMq Client模块 */
+        p_rabbitmqclient = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
+        CExchange ex(m_exchangename, "direct");
+        CQueue qu(m_queuename);
 
+        p_rabbitmqclient->connect();
+        p_rabbitmqclient->declareExchange(ex);
+        p_rabbitmqclient->declareQueue(qu);
+        p_rabbitmqclient->bindQueueToExchange(m_queuename, m_exchangename, m_routingkey);
+    }
 }
 
-Queue::~Queue()
+Source::~Source()
 {
-
+    info("reactor-event_source module done ...");
 }
 
 // 事件入队
-void Queue::push(std::string msg)
+void Source::push(std::string msg)
 {
     CMessage message(msg);
-    m_pQueue->publish(m_exchangename, m_routingkey, message);
+
+    {
+        std::unique_lock<std::mutex> lock(m_wlock);
+        p_rabbitmqclient->publish(m_exchangename, m_routingkey, message);
+    }
 
     info("RabbitMq client push msg, {}", msg);
 }
 
 // 事件出队
-std::string Queue::pop()
+std::string Source::pop()
 {
-    std::string msg = m_pQueue->consume(m_queuename);
+    std::string msg;
 
-    info("RabbitMq client pop msg, {}", msg);
+    {
+        std::unique_lock<std::mutex> lock(m_rlock);
+        msg = p_rabbitmqclient->consume_b(m_queuename, NULL, true);
+    }
 
+    info("RabbitMq client pop msg: {}", msg);
     return msg;
 }

@@ -25,7 +25,7 @@ Processor::Processor(IniConfigParser *parser)
 
 Processor::~Processor()
 {
-
+    info("reactor-processor module done ...");
 }
 
 void Processor::shutdown()

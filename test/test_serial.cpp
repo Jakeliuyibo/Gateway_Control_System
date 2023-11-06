@@ -4,12 +4,9 @@
 #include "systime.h"
 #include "logger.h"
 #include "configparser.h"
-#include "queue.h"
-#include "event.h"
 
 using namespace std;
 using namespace utility;
-using namespace reactor;
 
 int main()
 {

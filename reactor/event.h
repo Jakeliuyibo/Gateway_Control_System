@@ -51,15 +51,13 @@ namespace reactor
             };
 
             // 构造
+            DeviceEvent() {}
             DeviceEvent(int id, EventType type, std::string device, std::string action);
-            DeviceEvent(std::string ser);
-
             // 析构
-            ~DeviceEvent()
-            {
-
-            }
-        private:
+            ~DeviceEvent(){}
+            // 解析
+            bool parse(const std::string &ser);
+        public:
             int         m_id;           // ID
             EventType   m_type;         // 事件类型
             std::string m_device;       // 设备

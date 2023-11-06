@@ -57,8 +57,17 @@ DeviceEvent::DeviceEvent(int id, EventType type, std::string device, std::string
     add("action", m_action);
 }
 
-DeviceEvent::DeviceEvent(std::string ser)
+bool DeviceEvent::parse(const std::string &ser)
 {
+    if(     ser.find("id")      == std::string::npos
+        ||  ser.find("type")    == std::string::npos
+        ||  ser.find("device")  == std::string::npos
+        ||  ser.find("action")  == std::string::npos)
+    {
+        error("Can't detect sybmol from event msg: {}", ser);
+        return false;
+    }
+
     deserial(ser);
     m_id     = std::stoi(get("id"));
     m_device = get("device");
@@ -72,4 +81,6 @@ DeviceEvent::DeviceEvent(std::string ser)
             break;
         }
     }
+
+    return true;
 }

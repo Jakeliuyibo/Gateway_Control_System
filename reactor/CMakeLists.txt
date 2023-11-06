@@ -14,9 +14,9 @@ include_directories(
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
 
 # 生成queue静态库，并进行链接
-add_library(queue STATIC ${SRC})
+add_library(source STATIC ${SRC})
 link_directories(${LIBPATH})
-target_link_libraries(queue logger configparser rabbitmqclient)
+target_link_libraries(source logger configparser rabbitmqclient)
 
 # 生成event静态库，并进行链接
 add_library(event STATIC ${SRC})
@@ -24,7 +24,12 @@ link_directories(${LIBPATH})
 find_package(jsoncpp REQUIRED)
 target_link_libraries(event logger jsoncpp)
 
-# 生成queue静态库，并进行链接
+# 生成processor静态库，并进行链接
 add_library(processor STATIC ${SRC})
 link_directories(${LIBPATH})
 target_link_libraries(processor logger configparser threadpool)
+
+# 生成reactor静态库，并进行链接
+add_library(reactor STATIC ${SRC})
+link_directories(${LIBPATH})
+target_link_libraries(reactor logger configparser source event processor)
