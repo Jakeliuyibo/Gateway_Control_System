@@ -44,7 +44,7 @@ namespace utility
                 }
                 catch(const std::exception& e)
                 {
-                    error("JSON Parser can't parser key:{}" + key);
+                    log_error("JSON Parser can't parser key:{}" + key);
                     return false;
                 }
 
@@ -71,7 +71,7 @@ namespace utility
                 }
                 catch(const std::exception& e)
                 {
-                    error("INI Parser can't parser section:{},key:{}", section, key);
+                    log_error("INI Parser can't parser section:{},key:{}", section, key);
                     return false;
                 }
 

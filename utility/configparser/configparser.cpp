@@ -18,7 +18,7 @@ bool ConfigParser::open(const std::string &filepath)
     ifs.open(filepath);
     if(!is_open())
     {
-        error("Can't open json file {}", filepath);
+        log_error("Can't open json file {}", filepath);
         return false;
     }
 
@@ -30,7 +30,7 @@ bool ConfigParser::read(std::string &content)
     /* 打开文件 */
     if(!is_open())
     {
-        error("Can't read ConfigFile's data");
+        log_error("Can't read ConfigFile's data");
         return false;
     }
 
@@ -64,7 +64,7 @@ bool JsonConfigParser::load(const std::string &filepath)
     /* 打开文件 */
     if(!open(filepath))
     {
-        error("Can't load json file {}", filepath);
+        log_error("Can't load json file {}", filepath);
         return false;
     }
 
@@ -75,7 +75,7 @@ bool JsonConfigParser::load(const std::string &filepath)
     }
     catch(const std::exception& e)
     {
-        error("Can't parser json file {}", filepath);
+        log_error("Can't parser json file {}", filepath);
         close();
         return false;
     }
@@ -95,7 +95,7 @@ bool IniConfigParser::load(const std::string &filepath)
     /* 打开文件 */
     if(!open(filepath))
     {
-        error("Can't load ini file {}", filepath);
+        log_error("Can't load ini file {}", filepath);
         return false;
     }
 
@@ -106,7 +106,7 @@ bool IniConfigParser::load(const std::string &filepath)
     }
     catch(const std::exception& e)
     {
-        error("Can't parser ini file {}", filepath);
+        log_error("Can't parser ini file {}", filepath);
         close();
         return false;
     }

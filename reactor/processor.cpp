@@ -14,7 +14,7 @@ Processor::Processor(IniConfigParser *parser)
 
     if(!parserFlag)
     {
-        error("Init processor failed, when load config");
+        log_error("Init processor failed, when load config");
         return;
     }
 
@@ -25,7 +25,7 @@ Processor::Processor(IniConfigParser *parser)
 
 Processor::~Processor()
 {
-    info("reactor-processor module done ...");
+    log_info("reactor-processor module done ...");
 }
 
 void Processor::shutdown()

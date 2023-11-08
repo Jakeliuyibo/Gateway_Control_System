@@ -20,12 +20,12 @@ namespace utility
 
     #define LOGGER_NAME "g_logger"
 
-    #define trace(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::trace, __VA_ARGS__)
-    #define debug(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::debug, __VA_ARGS__)
-    #define info(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::info, __VA_ARGS__)
-    #define warning(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::warn, __VA_ARGS__)
-    #define error(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::err, __VA_ARGS__)
-    #define critical(...) SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME), spdlog::level::critical, __VA_ARGS__)
+    #define log_trace(...)      SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::trace      , __VA_ARGS__)
+    #define log_debug(...)      SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::debug      , __VA_ARGS__)
+    #define log_info(...)       SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::info       , __VA_ARGS__)
+    #define log_warning(...)    SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::warn       , __VA_ARGS__)
+    #define log_error(...)      SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::err        , __VA_ARGS__)
+    #define log_critical(...)   SPDLOG_LOGGER_CALL(spdlog::get(LOGGER_NAME) , spdlog::level::critical   , __VA_ARGS__)
 
     /**
      * @description: 基于spdlog的单例日志器

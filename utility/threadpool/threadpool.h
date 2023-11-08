@@ -46,7 +46,7 @@ namespace utility
 
                     if(f_shutdown)
                     {
-                        error("submit task to a stopped threadpool");
+                        log_error("submit task to a stopped threadpool");
                         throw std::runtime_error("submit task to a stopped threadpool");
                     }
 

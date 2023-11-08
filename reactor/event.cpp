@@ -18,7 +18,7 @@ std::string Event::get(std::string key)
 {
     if(!m_obj.isMember(key))
     {
-        error("Event Json-Obj not contains key {}", key);
+        log_error("Event Json-Obj not contains key {}", key);
         return "";
     }
 
@@ -64,7 +64,7 @@ bool DeviceEvent::parse(const std::string &ser)
         ||  ser.find("device")  == std::string::npos
         ||  ser.find("action")  == std::string::npos)
     {
-        error("Can't detect sybmol from event msg: {}", ser);
+        log_error("Can't detect sybmol from event msg: {}", ser);
         return false;
     }
 

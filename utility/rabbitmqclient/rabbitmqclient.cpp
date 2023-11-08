@@ -37,7 +37,7 @@ int RabbitMqClient::connect()
     /* 检测参数 */
     if (m_hostname.empty() || m_port <= 0 || m_username.empty() || m_password.empty())
     {
-        error("Failed to construct RabbitMqClient object");
+        log_error("Failed to construct RabbitMqClient object");
         return -1;
     }
 
@@ -45,7 +45,7 @@ int RabbitMqClient::connect()
     m_conn = amqp_new_connection();
     if (m_conn == nullptr)
     {
-        error("Failed to allocate rabbitmq connection ptr");
+        log_error("Failed to allocate rabbitmq connection ptr");
         return -2;
     }
 
@@ -53,7 +53,7 @@ int RabbitMqClient::connect()
     amqp_socket_t *m_socket = amqp_tcp_socket_new(m_conn);
     if (m_socket == nullptr)
     {
-        error("Failed to allocate rabbitmq socket ptr");
+        log_error("Failed to allocate rabbitmq socket ptr");
         return -3;
     }
 
@@ -61,7 +61,7 @@ int RabbitMqClient::connect()
     int isOpenSocket = amqp_socket_open(m_socket, m_hostname.c_str(), m_port);
     if (isOpenSocket < 0)
     {
-        error("Failed to bind rabbitmq socket ip and port");
+        log_error("Failed to bind rabbitmq socket ip and port");
         return -4;
     }
 
@@ -77,7 +77,7 @@ int RabbitMqClient::connect()
                            "Connect");
     if (isLogin < 0)
     {
-        error("Failed to login rabbitmq username and password");
+        log_error("Failed to login rabbitmq username and password");
         return -5;
     }
 
@@ -85,7 +85,7 @@ int RabbitMqClient::connect()
     amqp_channel_open_ok_t *isOpenChannel = amqp_channel_open(m_conn, m_channel);
     if (!isOpenChannel)
     {
-        error("Failed to open rabbitmq channel");
+        log_error("Failed to open rabbitmq channel");
         return -6;
     }
     return 0;
@@ -103,7 +103,7 @@ int RabbitMqClient::disconnect()
         ret = errorMsg(amqp_channel_close(m_conn, m_channel, AMQP_REPLY_SUCCESS), "Close Channel");
         if (ret < 0)
         {
-            error("Failed to close rabbitmq channel");
+            log_error("Failed to close rabbitmq channel");
             return ret;
         }
 
@@ -111,7 +111,7 @@ int RabbitMqClient::disconnect()
         ret = errorMsg(amqp_connection_close(m_conn, AMQP_REPLY_SUCCESS), "Close Connection");
         if (ret < 0)
         {
-            error("Failed to close rabbitmq connection");
+            log_error("Failed to close rabbitmq connection");
             return ret;
         }
 
@@ -119,7 +119,7 @@ int RabbitMqClient::disconnect()
         ret = amqp_destroy_connection(m_conn);
         if (ret < 0)
         {
-            error("Failed to destory rabbitmq conn");
+            log_error("Failed to destory rabbitmq conn");
             return ret;
         }
 
@@ -127,7 +127,7 @@ int RabbitMqClient::disconnect()
     }
     else
     {
-        warning("Try to disconnect a empty rabbitm connection");
+        log_warning("Try to disconnect a empty rabbitm connection");
         return -4;
     }
 
@@ -201,7 +201,7 @@ int RabbitMqClient::publish(const std::string &exchange_name, const std::string 
                                  amqp_cstring_bytes(message.m_data.c_str()));
     if (ret != AMQP_STATUS_OK)
     {
-        error("rabbitmq client publish message");
+        log_error("rabbitmq client publish message");
         return errorMsg(amqp_get_rpc_reply(m_conn), "Publish message");
     }
 
@@ -217,7 +217,7 @@ std::string RabbitMqClient::consume_nb(const std::string &queue_name, bool no_ac
     std::vector<std::string> vec_msg = consume_nb(queue_name, 1, no_ack);
     if (vec_msg.size() != 1)
     {
-        warning("Try to get one message from rabbitmq server, but get null or more than one");
+        log_warning("Try to get one message from rabbitmq server, but get null or more than one");
         return "";
     }
 
@@ -234,7 +234,7 @@ std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_nam
         int retGetMsg = errorMsg(replyGet, "Get message");
         if (retGetMsg < 0)
         {
-            error("Failed to get message from RabbitMQ server");
+            log_error("Failed to get message from RabbitMQ server");
             return ret_msg;
         }
         // 获取队列中存在多少条消息
@@ -246,10 +246,10 @@ std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_nam
                 // info("rabbitmq queue remaining %d messages", tip->message_count);
                 break;
             case AMQP_BASIC_GET_EMPTY_METHOD:
-                info("no message in rabbitmq queue");
+                log_info("no message in rabbitmq queue");
                 return ret_msg;
             default:
-                error("get error rabbitmq reply id %d", replyGet.reply.id);
+                log_error("get error rabbitmq reply id %d", replyGet.reply.id);
                 return ret_msg;
         }
 
@@ -258,7 +258,7 @@ std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_nam
         int retReadMsg = errorMsg(amqp_read_message(m_conn, m_channel, &amqp_msg, false), "Read message");
         if (retReadMsg < 0)
         {
-            error("Failed to read rabbitmq message");
+            log_error("Failed to read rabbitmq message");
             return ret_msg;
         }
 
@@ -284,7 +284,7 @@ std::string RabbitMqClient::consume_b(const std::string &queue_name, struct time
     std::vector<std::string> vec_msg = consume_b(queue_name, 1, timeout, no_ack);
     if(vec_msg.size() != 1)
     {
-        warning("Try to consume one message from rabbitmq server, but get null or more than one");
+        log_warning("Try to consume one message from rabbitmq server, but get null or more than one");
         return "";
     }
 
@@ -329,7 +329,7 @@ std::vector<std::string> RabbitMqClient::consume_b(const std::string &queue_name
         int isConsume = errorMsg(amqp_consume_message(m_conn, &envelope, timeout, 0), "Consume message");
         if (isConsume < 0)
         {
-            error("Faild to consume no.{} message from rabbitmq server", num);
+            log_error("Faild to consume no.{} message from rabbitmq server", num);
             return ret_msg;
         }
 
@@ -365,13 +365,13 @@ int RabbitMqClient::errorMsg(const amqp_rpc_reply_t &reply, const std::string &d
     case AMQP_RESPONSE_NORMAL:
         return 0;
     case AMQP_RESPONSE_NONE:
-        error("RabbitMQ AMQP Response None Error, where is occured in {}", desc.c_str());
+        log_error("RabbitMQ AMQP Response None Error, where is occured in {}", desc.c_str());
         break;
     case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-        error("RabbitMQ AMQP Response Library Error, where is occured in {}", desc.c_str());
+        log_error("RabbitMQ AMQP Response Library Error, where is occured in {}", desc.c_str());
         break;
     case AMQP_RESPONSE_SERVER_EXCEPTION:
-        error("RabbitMQ AMQP Response Server Error, where is occured in {}", desc.c_str());
+        log_error("RabbitMQ AMQP Response Server Error, where is occured in {}", desc.c_str());
         break;
     default:
         break;
@@ -385,5 +385,5 @@ int RabbitMqClient::errorMsg(const amqp_rpc_reply_t &reply, const std::string &d
  */
 void utility::showRabbitMqVersion()
 {
-    info("Rabbitmq Version %d.%d.%d", AMQP_VERSION_MAJOR, AMQP_VERSION_MINOR, AMQP_VERSION_PATCH);
+    log_info("Rabbitmq Version %d.%d.%d", AMQP_VERSION_MAJOR, AMQP_VERSION_MINOR, AMQP_VERSION_PATCH);
 }

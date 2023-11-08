@@ -22,7 +22,7 @@ Source::Source(IniConfigParser *parser)
 
     if(!parserFlag)
     {
-        error("Init rabbitmq queue failed, when load config");
+        log_error("Init rabbitmq queue failed, when load config");
         return;
     }
 
@@ -44,7 +44,7 @@ Source::Source(IniConfigParser *parser)
 
 Source::~Source()
 {
-    info("reactor-event_source module done ...");
+    log_info("reactor-event_source module done ...");
 }
 
 // 事件入队
@@ -57,7 +57,7 @@ void Source::push(std::string msg)
         p_rabbitmqclient->publish(m_exchangename, m_routingkey, message);
     }
 
-    info("RabbitMq client push msg, {}", msg);
+    log_info("RabbitMq client push msg, {}", msg);
 }
 
 // 事件出队
@@ -70,6 +70,6 @@ std::string Source::pop()
         msg = p_rabbitmqclient->consume_b(m_queuename, NULL, true);
     }
 
-    info("RabbitMq client pop msg: {}", msg);
+    log_info("RabbitMq client pop msg: {}", msg);
     return msg;
 }

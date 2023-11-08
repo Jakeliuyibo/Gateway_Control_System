@@ -2,7 +2,6 @@
 #include <string>
 #include <chrono>
 #include <thread>
-#include <uv.h>
 #include "systime.h"
 #include "logger.h"
 #include "configparser.h"
@@ -17,7 +16,7 @@ int main()
     /* 初始化日志模块           */
     Logger::instance()->init("../logs/C.log", Logger::STREAM_BOTH, Logger::MODE_SYNC, 
                                               Logger::LEVEL_DEBUG, Logger::LEVEL_INFO, Logger::LEVEL_DEBUG);
-    critical("program start ...");
+    log_critical("program start ...");
 
     /* 初始化配置模块           */
     IniConfigParser config;
@@ -29,7 +28,7 @@ int main()
     reactor.listen();
     
     /* 注销日志模块             */
-    critical("program end ...");
+    log_critical("program end ...");
     Logger::instance()->deinit();
 
     return 0;

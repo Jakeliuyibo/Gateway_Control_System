@@ -18,12 +18,12 @@ Reactor::Reactor(IniConfigParser *config)
 
 Reactor::~Reactor()
 {
-    info("reactor module done ...");
+    log_info("reactor module done ...");
 }
 
 void thread_func(DeviceEvent event)
 {
-    critical("线程池接收到事件id={},类型type={}, 设备device={}, 动作action={}", 
+    log_critical("线程池接收到事件id={},类型type={}, 设备device={}, 动作action={}", 
         event.m_id, event.m_type, event.m_device, event.m_action
         );
 }
@@ -60,7 +60,7 @@ void Reactor::listen()
                 DeviceEvent event;
                 if(!event.parse(event_msg))
                 {
-                    error("Reactor recv error event");
+                    log_error("Reactor recv error event");
                     continue;
                 }
 
@@ -72,6 +72,6 @@ void Reactor::listen()
     // th.detach();
     th.join();
 
-    info("Create sub-thread to listen event source");
+    log_info("Create sub-thread to listen event source");
 }
 

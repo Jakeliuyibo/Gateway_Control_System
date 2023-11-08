@@ -21,6 +21,7 @@ set(HEADPATH
     ${PROJECT_DIR}/utility/rabbitmqclient
 	${PROJECT_DIR}/utility/safequeue
 	${PROJECT_DIR}/utility/threadpool
+	${PROJECT_DIR}/driver/serial
 	${PROJECT_DIR}/reactor
 	)
 
