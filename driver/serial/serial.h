@@ -14,20 +14,24 @@ namespace driver
     class Serial
     {
         public:
-            Serial(IniConfigParser *config)
-            {
-                log_critical("serial");
-            }
-            ~Serial()
-            {
-                // critical("~serial");
-            }
-            int open()
-            {
-                return 0;
-            }
+            // 构造
+            Serial(IniConfigParser *parser);
+            // 析构
+            ~Serial();
+            void read();
+            void write(const std::string &data);
+            void close();
         private:
-            int a;
+            bool open(const std::string &port, int bard_rate);
+        private:
+            //io_service Object
+            io_service m_ios;
+        
+            //Serial port Object
+            serial_port *p_serialport;
+            
+            //Serial_port function exception
+            boost::system::error_code ec;
     };
 
 }

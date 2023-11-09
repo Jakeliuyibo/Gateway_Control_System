@@ -19,4 +19,4 @@ target_link_libraries(serial logger configparser)
 
 # 链接第三方静态库
 find_package(boost_system REQUIRED)
-target_link_libraries(serial boost_system)
+target_link_libraries(serial boost_system.so)

@@ -22,6 +22,7 @@ int main()
     parserFlag = config.load("../config/defconfig.ini");
 
     Serial ser(&config);
+    ser.write("hahah");
 
     /* 注销日志模块             */
     log_critical("program end ...");
