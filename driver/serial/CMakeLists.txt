@@ -11,7 +11,7 @@ include_directories(
 
 # 设置静态库路径
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(serial STATIC ${SRC})
+add_library(serial SHARED ${SRC})
 
 # 链接本地静态库
 link_directories(${LIBPATH})

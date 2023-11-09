@@ -14,7 +14,7 @@ include_directories(
 
 # 生成静态库
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(rabbitmqclient STATIC ${SRC})
+add_library(rabbitmqclient SHARED ${SRC})
 
 # 链接本地静态库
 # link_directories(${RABBITMQ_PATH}/lib)

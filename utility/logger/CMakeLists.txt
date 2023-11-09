@@ -11,7 +11,7 @@ include_directories(
 
 # 生成静态库
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(logger STATIC ${SRC})
+add_library(logger SHARED ${SRC})
 
 # 链接本地静态库
 link_directories(${LIBPATH})

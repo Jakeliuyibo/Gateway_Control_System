@@ -10,4 +10,4 @@ include_directories(
 
 # 生成静态库
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(safequeue STATIC ${SRC})
+add_library(safequeue SHARED ${SRC})
