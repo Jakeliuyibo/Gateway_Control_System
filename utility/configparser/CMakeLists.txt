@@ -19,5 +19,5 @@ target_link_libraries(configparser logger)
 
 # 链接第三方静态库
 find_package(boost_filesystem REQUIRED)
-target_link_libraries(configparser boost_filesystem)  # 链接jsoncpp\config++库到你的可执行文件
+target_link_libraries(configparser boost_filesystem.so)
 target_compile_definitions(configparser PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)

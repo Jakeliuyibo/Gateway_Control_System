@@ -17,8 +17,8 @@ set(LIBRARY_OUTPUT_PATH ${LIBPATH})
 add_library(rabbitmqclient STATIC ${SRC})
 
 # 链接本地静态库
-link_directories(${RABBITMQ_PATH}/lib)
-target_link_libraries(rabbitmqclient librabbitmq.a)
+# link_directories(${RABBITMQ_PATH}/lib)
+target_link_libraries(rabbitmqclient ${RABBITMQ_PATH}/lib/librabbitmq.so)
 
 link_directories(${LIBPATH})
 target_link_libraries(rabbitmqclient logger)

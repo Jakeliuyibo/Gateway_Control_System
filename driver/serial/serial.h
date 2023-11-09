@@ -18,10 +18,14 @@ namespace driver
             Serial(IniConfigParser *parser);
             // 析构
             ~Serial();
+            // 读取
             void read();
+            // 写入
             void write(const std::string &data);
+            // 关闭
             void close();
         private:
+            // 打开
             bool open(const std::string &port, int bard_rate);
         private:
             //io_service Object

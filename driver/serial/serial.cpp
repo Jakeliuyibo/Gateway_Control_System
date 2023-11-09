@@ -1,18 +1,8 @@
-/*
- * @Author: zn zhangn12581@163.com
- * @Date: 2023-11-08 14:57:51
- * @LastEditors: zn zhangn12581@163.com
- * @LastEditTime: 2023-11-08 15:10:03
- * @FilePath: /Gateway_Control_System/driver/serial/serial.cpp
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
 #include "serial.h"
 
 using namespace utility;
 using namespace driver;
 using namespace boost::asio;
-
-
 
 Serial::Serial(IniConfigParser *parser)
 {
@@ -39,7 +29,6 @@ Serial::Serial(IniConfigParser *parser)
             log_error("Can't open serial {}", serial_port);
         }
 	}
-    log_warning("init serial");
 }
 
 Serial::~Serial()
