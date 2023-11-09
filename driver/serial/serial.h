@@ -26,16 +26,12 @@ namespace driver
             void close();
         private:
             // 打开
-            bool open(const std::string &port, int bard_rate);
+            bool open();
         private:
-            //io_service Object
-            io_service m_ios;
-        
-            //Serial port Object
-            serial_port *p_serialport;
-            
-            //Serial_port function exception
-            boost::system::error_code ec;
+            std::string   m_portname;
+            int           m_baudrate;
+            io_service    m_ios;
+            serial_port  *p_serialport;
     };
 
 }
