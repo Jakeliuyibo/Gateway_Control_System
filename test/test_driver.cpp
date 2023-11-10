@@ -3,7 +3,8 @@
 #include "systime.h"
 #include "logger.h"
 #include "configparser.h"
-#include "serial.h"
+#include "serialchannel.h"
+#include "tcpchannel.h"
 
 using namespace std;
 using namespace driver;
@@ -23,6 +24,9 @@ int main()
 
     Serial ser(&config);
     ser.write("hahah");
+
+    TcpServer tcpser("127.0.0.1", 1234);
+
 
     /* 注销日志模块             */
     log_critical("program end ...");

@@ -1,5 +1,4 @@
-add_subdirectory(serial)
-add_subdirectory(ethernet)
+add_subdirectory(filetransfer)
 add_subdirectory(opticalfiber)
 add_subdirectory(radiodigital)
 add_subdirectory(satellite)

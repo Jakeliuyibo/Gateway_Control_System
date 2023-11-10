@@ -1,4 +1,4 @@
-#include "serial.h"
+#include "serialchannel.h"
 
 using namespace utility;
 using namespace driver;
