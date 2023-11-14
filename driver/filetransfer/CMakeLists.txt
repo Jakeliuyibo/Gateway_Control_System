@@ -11,15 +11,15 @@ include_directories(
 
 # 链接本地静态库
 link_directories(${LIBPATH})
-link_libraries(logger)
+link_libraries(logger safequeue)
 
 # 链接第三方静态库
 find_package(boost_system REQUIRED)
-link_libraries(boost_system.so)
+find_package(boost_filesystem REQUIRED)
+link_libraries(boost_system.so boost_filesystem.so)
 
 # 设置静态库路径
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
 add_library(filetransfer  SHARED filetransfer.cpp)
-add_library(tcpchannel    SHARED tcpchannel.cpp)
-add_library(serialchannel SHARED serialchannel.cpp)
+add_library(transchannel  SHARED transchannel.cpp)
 

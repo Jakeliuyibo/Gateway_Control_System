@@ -22,7 +22,7 @@ bool Logger::init(  const std::string &filepath,
         if (work_stream & STREAM_CONSOLE)
         {
             auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-            const char * console_format = "[%^%l%$] [%s:%#] %v";
+            const char * console_format = "[%^%l%$] %v";
             console_sink->set_pattern(console_format);
             console_sink->set_level((spdlog::level::level_enum)level_console);
             vecSink.emplace_back(console_sink);

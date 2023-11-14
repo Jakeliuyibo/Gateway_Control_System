@@ -4,12 +4,19 @@
 #include "systime.h"
 #include "logger.h"
 #include "configparser.h"
-#include "serialchannel.h"
-#include "tcpchannel.h"
+#include "safequeue.h"
+#include "transchannel.h"
 
 using namespace std;
 using namespace driver;
 using namespace utility;
+
+class AAA
+{
+    public:
+        AAA(int v) : val(v) {}
+        int val;
+};
 
 int main()
 {
@@ -23,13 +30,8 @@ int main()
     bool parserFlag = true;
     parserFlag = config.load("../config/defconfig.ini");
 
-    TcpReceiver tcpreceiver(1234);
-
-    TcpTransfer tcptransfer("127.0.0.1", 1234);
-    tcptransfer.transfer("/root/Gateway_Control_System/storage/", "test.txt");
-
-
-    // tcpreceiver.m_ioc.run();
+    TcpFTChannel tf(1234, "127.0.0.1", 1234);
+    tf.transfer("/root/Gateway_Control_System/storage/", "test.txt");
 
     usleep(3000000);
 

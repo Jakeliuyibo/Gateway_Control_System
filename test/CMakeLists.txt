@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 # 本地引用
 include_directories(${HEADPATH})
 link_directories(${LIBPATH})
-link_libraries(systime logger configparser reactor tcpchannel)
+link_libraries(systime logger configparser safequeue reactor transchannel filetransfer)
 
 # # 第三方库引用
 # include_directories(/usr/include)
