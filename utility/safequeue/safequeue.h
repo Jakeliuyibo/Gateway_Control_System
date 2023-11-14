@@ -17,7 +17,12 @@ namespace utility
             void enqueue(T &t)
             {
                 std::unique_lock<std::mutex> lock(m_lock);
-                m_queue.emplace(&t);
+                m_queue.emplace(t);
+            }
+            void enqueue(T &&t)
+            {
+                std::unique_lock<std::mutex> lock(m_lock);
+                m_queue.emplace(std::move(t));
             }
             // 取出
             bool dequeue(T &t)
@@ -25,7 +30,7 @@ namespace utility
                 std::unique_lock<std::mutex> lock(m_lock);
 
                 /* 检测队列是否为空 */
-                if(empty())
+                if(m_queue.empty())
                 {
                     return false;
                 }
@@ -40,7 +45,7 @@ namespace utility
                 std::unique_lock<std::mutex> lock(m_lock);
                 return m_queue.empty();
             }
-            // 大小
+            // 获取队列大小
             int size()
             {
                 std::unique_lock<std::mutex> lock(m_lock);
