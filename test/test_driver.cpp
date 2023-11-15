@@ -5,18 +5,11 @@
 #include "logger.h"
 #include "configparser.h"
 #include "safequeue.h"
-#include "transchannel.h"
+#include "filetransfer.h"
 
 using namespace std;
 using namespace driver;
 using namespace utility;
-
-class AAA
-{
-    public:
-        AAA(int v) : val(v) {}
-        int val;
-};
 
 int main()
 {
@@ -30,10 +23,10 @@ int main()
     bool parserFlag = true;
     parserFlag = config.load("../config/defconfig.ini");
 
-    TcpFTChannel tf(1234, "127.0.0.1", 1234);
-    tf.transfer("/root/Gateway_Control_System/storage/", "test.txt");
+    FileTransfer *tf = new TcpFileTransfer(1234, "127.0.0.1", 1234);
+    tf->transfer("/root/Gateway_Control_System/storage/", "test.txt");
 
-    usleep(3000000);
+    sleep(3);
 
     /* 注销日志模块             */
     log_critical("program end ...");

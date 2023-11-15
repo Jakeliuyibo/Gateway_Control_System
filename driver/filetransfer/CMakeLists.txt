@@ -20,6 +20,5 @@ link_libraries(boost_system.so boost_filesystem.so)
 
 # 设置静态库路径
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(filetransfer  SHARED filetransfer.cpp)
-add_library(transchannel  SHARED transchannel.cpp)
+add_library(filetransfer SHARED ${SRC})
 
