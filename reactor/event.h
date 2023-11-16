@@ -37,17 +37,21 @@ namespace reactor
         public:
             enum EventType
             {
-                EVENT_INIT  = 0x1,      // 事件：初始化设备
-                EVENT_READ  = 0x2,      // 事件：读取设备
-                EVENT_WRITE = 0x3,      // 事件：写入设备
-                EVENT_OTHER = 0x4,      // 其他事件
+                EVENT_INIT      = 0x1,      // 事件：初始化设备
+                EVENT_WRITE     = 0x2,      // 事件：写入设备
+                EVENT_READ      = 0x3,      // 事件：读取设备
+                EVENT_READYREAD = 0x4,      // 事件：可读设备
+                EVENT_CLOSE     = 0x5,      // 事件：注销设备
+                EVENT_OTHER     = 0x6       // 其他事件
             };
 
             std::unordered_map<EventType, std::string> EventTypeMapping = {
-                {EVENT_INIT , "init"},
-                {EVENT_READ , "read"},
-                {EVENT_WRITE, "write"},
-                {EVENT_OTHER, "other"}
+                {EVENT_INIT      , "init"},
+                {EVENT_WRITE     , "write"},
+                {EVENT_READ      , "read"},
+                {EVENT_READYREAD , "readyread"},
+                {EVENT_CLOSE     , "close"},
+                {EVENT_OTHER     , "other"}
             };
 
             // 构造

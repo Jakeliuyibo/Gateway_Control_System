@@ -1,5 +1,2 @@
 add_subdirectory(filetransfer)
-add_subdirectory(opticalfiber)
-add_subdirectory(radiodigital)
-add_subdirectory(satellite)
-add_subdirectory(underwateracoustic)
+add_subdirectory(commdevice)
