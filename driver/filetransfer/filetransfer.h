@@ -20,6 +20,13 @@ namespace driver
             {
                 return boost::filesystem::exists(file_path);
             }
+            std::pair<bool, size_t> transfer(const std::string &file_complete_path)
+            {
+                boost::filesystem::path fp(file_complete_path);
+                std::string path = fp.parent_path().string();
+                std::string name = fp.filename().string();
+                return transfer(path, name);
+            }
     };
 
     /**

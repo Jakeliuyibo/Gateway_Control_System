@@ -6,10 +6,13 @@
 #include "configparser.h"
 #include "safequeue.h"
 #include "filetransfer.h"
+#include "event.h"
+#include "commdevice.h"
 
 using namespace std;
 using namespace driver;
 using namespace utility;
+using namespace reactor;
 
 int main()
 {
@@ -23,9 +26,14 @@ int main()
     bool parserFlag = true;
     parserFlag = config.load("../config/defconfig.ini");
 
-    FileTransfer *tf = new TcpFileTransfer(1234, "127.0.0.1", 1234);
-    tf->transfer("/root/Gateway_Control_System/storage/", "test.txt");
-
+    // FileTransfer *tf = new TcpFileTransfer(1234, "127.0.0.1", 1234);
+    // tf->transfer("/root/Gateway_Control_System/storage/", "test.txt");
+    OpticalfiberCommDev op(&config);
+    DeviceEvent e1(1, DeviceEvent::EVENT_INIT , "opticalfiber", "");
+    DeviceEvent e2(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test.txt");
+    op.handleEvent(e1);
+    op.handleEvent(e2);
+    
     sleep(3);
 
     /* 注销日志模块             */

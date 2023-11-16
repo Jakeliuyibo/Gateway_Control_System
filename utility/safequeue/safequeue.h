@@ -1,3 +1,11 @@
+/*
+ * @Author       : liuyibo
+ * @Date         : 2023-11-14 12:47:07
+ * @LastEditors  : liuyibo 1299502716@qq.com
+ * @LastEditTime : 2023-11-16 05:07:09
+ * @FilePath     : /Gateway_Control_System/utility/safequeue/safequeue.h
+ * @Description  : 模板、互斥锁、队列、阻塞非阻塞
+ */
 #pragma once
 
 #include <queue>
