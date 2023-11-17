@@ -14,5 +14,4 @@ link_libraries(systime logger configparser safequeue reactor event filetransfer 
 set(EXECUTABLE_OUTPUT_PATH ${EXECPATH})
 
 add_executable(test_reactor test_reactor.cpp)
-add_executable(test_driver  test_driver.cpp)
 add_executable(test_queue   test_queue.cpp)

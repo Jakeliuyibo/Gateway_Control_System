@@ -61,6 +61,11 @@ namespace reactor
             ~DeviceEvent(){}
             // 解析
             bool parse(const std::string &ser);
+            // 修改
+            void modify_id(int new_id);
+            void modify_type(EventType new_type);
+            void modify_device(std::string new_device);
+            void modify_action(std::string new_action);
         public:
             int         m_id;           // ID
             EventType   m_type;         // 事件类型

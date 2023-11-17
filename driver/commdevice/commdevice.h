@@ -4,11 +4,11 @@
 #include <memory>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
-#include "safequeue.h"
 #include "logger.h"
 #include "configparser.h"
 #include "event.h"
 #include "filetransfer.h"
+
 
 using namespace utility;
 using namespace reactor;
@@ -18,7 +18,10 @@ namespace driver
     class CommDevice
     {
         public:
-            virtual bool handleEvent(DeviceEvent &event) = 0;
+            using callback_type = std::function<void(DeviceEvent event)>;
+
+        public:
+            virtual bool handleEvent(DeviceEvent event) = 0;
             virtual ~CommDevice() = default;
             void close()
             {
@@ -29,9 +32,17 @@ namespace driver
                     p_filetransfer = nullptr;
                 }
             }
+            void bindReadableEvent2Source(const callback_type &func)
+            {
+                f_serverreable_cb = func;
+            }
         public:
             int             m_devid;
+            std::string     m_devidentify;
+            std::string     m_storagepath;
+            std::string     m_storageextentprefix;
             FileTransfer   *p_filetransfer;
+            callback_type   f_serverreable_cb;
     };
 
     /**
@@ -42,7 +53,7 @@ namespace driver
         public:
             OpticalfiberCommDev(IniConfigParser *config);
             ~OpticalfiberCommDev();
-            bool handleEvent(DeviceEvent &event);
+            bool handleEvent(DeviceEvent event);
         private:
             unsigned short  m_serverport;
             std::string     m_targetip;
@@ -57,7 +68,7 @@ namespace driver
         public:
             RadiodigitalCommDev(IniConfigParser *config);
             ~RadiodigitalCommDev();
-            bool handleEvent(DeviceEvent &event);
+            bool handleEvent(DeviceEvent event);
     };
 
     /**
@@ -68,7 +79,7 @@ namespace driver
         public:
             UnderwaterAcousticCommDev(IniConfigParser *config);
             ~UnderwaterAcousticCommDev();
-            bool handleEvent(DeviceEvent &event);
+            bool handleEvent(DeviceEvent event);
     };
 
     /**
@@ -79,6 +90,6 @@ namespace driver
         public:
             SatelliteCommDev(IniConfigParser *config);
             ~SatelliteCommDev();
-            bool handleEvent(DeviceEvent &event);
+            bool handleEvent(DeviceEvent event);
     };
 }

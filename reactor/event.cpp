@@ -51,10 +51,10 @@ DeviceEvent::DeviceEvent(int id, EventType type, std::string device, std::string
         m_device(device),
         m_action(action) 
 {
-    add("id"    , std::to_string(m_id));
-    add("type"  , EventTypeMapping[m_type]);
-    add("device", m_device);
-    add("action", m_action);
+    modify_id(m_id);
+    modify_type(m_type);
+    modify_device(m_device);
+    modify_action(m_action);
 }
 
 bool DeviceEvent::parse(const std::string &ser)
@@ -81,6 +81,23 @@ bool DeviceEvent::parse(const std::string &ser)
             break;
         }
     }
-
     return true;
+}
+
+// 修改
+void DeviceEvent::modify_id(int new_id)
+{
+    add("id"    , std::to_string(new_id));
+}
+void DeviceEvent::modify_type(EventType new_type)
+{
+    add("type"  , EventTypeMapping[new_type]);
+}
+void DeviceEvent::modify_device(std::string new_device)
+{
+    add("device", new_device);
+}
+void DeviceEvent::modify_action(std::string new_action)
+{
+    add("action", new_action);
 }

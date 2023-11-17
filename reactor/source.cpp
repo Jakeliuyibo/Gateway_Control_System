@@ -57,7 +57,7 @@ void Source::push(std::string msg)
         p_rabbitmqclient->publish(m_exchangename, m_routingkey, message);
     }
 
-    log_info("RabbitMq client push msg, {}", msg);
+    log_trace("Source存入RabbitMq client队列消息{}", msg);
 }
 
 // 事件出队
@@ -70,6 +70,6 @@ std::string Source::pop()
         msg = p_rabbitmqclient->consume_b(m_queuename, NULL, true);
     }
 
-    log_info("RabbitMq client pop msg: {}", msg);
+    log_trace("Source从RabbitMq client队列取出消息{}", msg);
     return msg;
 }

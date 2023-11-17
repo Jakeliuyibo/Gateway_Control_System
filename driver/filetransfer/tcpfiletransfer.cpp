@@ -7,10 +7,10 @@
 using namespace utility;
 using namespace driver;
 
-
-TcpFileTransfer::TcpFileTransfer(port_type server_port, const std::string &target_ip, port_type target_port)
+TcpFileTransfer::TcpFileTransfer(port_type server_port, const callback_type &server_readable_cb, cstr_type &target_ip, port_type target_port)
     :
     m_server_port(server_port),
+    f_readable_cb(server_readable_cb),
     m_target_ip(target_ip),
     m_target_port(target_port),
     p_ioc(std::make_unique<ioc_type>()),
@@ -37,7 +37,8 @@ TcpFileTransfer::TcpFileTransfer(port_type server_port, const std::string &targe
                     m_client_request.enqueue(std::move(client_sk));
                     log_info("TcpFileTransfer({})接收到客户端({})连接", m_server_port, remote_ip);
 
-                    // std::thread(&TcpFileTransfer::recv, this, std::move(client_sk)).detach();
+                    /* 回调通知上层模块数据可读 */
+                    f_readable_cb();
                 }
             }
             catch (const std::exception &e)
@@ -54,26 +55,18 @@ TcpFileTransfer::~TcpFileTransfer()
     p_server_socket->close();
 }
 
-std::pair<bool, size_t> TcpFileTransfer::transfer(const std::string &file_path, const std::string &file_name)
+TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name)
 {
     std::size_t trans_bytes = 0;
     bool ret = true;
 
-    /* 检测文件是否存在 */
-    std::string file_complete_path = file_path + file_name;
-    std::ifstream ifs(file_complete_path, std::ios::binary | std::ios::ate);
-    if (!ifs.is_open())
-    {
-        log_error("Don't existed file {}", file_complete_path);
-        return std::pair<bool, size_t>(false, 0);
-    }
-
-    /* 获取文件大小并将指针指向开始位置 */
-    auto file_size = ifs.tellg();
-    ifs.seekg(0, std::ios::beg);
-
     try
     {
+        /* 打开文件并获取文件大小 */
+        std::ifstream ifs(file_full_path, std::ios::binary | std::ios::ate);
+        auto file_size = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
+
         /* 创建客户端连接至目标服务器 */
         sock_type sk(*p_ioc);
         boost::system::error_code ec;
@@ -85,7 +78,7 @@ std::pair<bool, size_t> TcpFileTransfer::transfer(const std::string &file_path, 
         }
 
         /* 发送文件名+文件大小 */
-        std::string header = file_name + "-" + std::to_string(file_size) + "\n";
+        std::string header = file_name + "-" + std::to_string(file_size) + ":";
         trans_bytes += boost::asio::write(sk, boost::asio::buffer(header));
 
         /* 发送文件内容 */
@@ -99,67 +92,77 @@ std::pair<bool, size_t> TcpFileTransfer::transfer(const std::string &file_path, 
             remaining_bytes -= bytes_to_write;
         }
 
-        log_info("TcpFileTransfer成功传输文件({}:{} bytes) to ({}:{})", file_complete_path, file_size, m_target_ip, m_target_port);
+        /* 释放资源 */
+        ifs.close();
+        sk.close();
+        log_info("TcpFileTransfer成功传输文件({}:{} bytes) to ({}:{})", file_full_path, file_size, m_target_ip, m_target_port);
     }
     catch(const std::exception& e)
     {
-        log_error("TcpFileTransfer向({}:{})传输文件file({})失败, error msg = {}", m_target_ip, m_target_port, file_complete_path, e.what());
+        log_error("TcpFileTransfer向({}:{})传输文件file({})失败, error msg = {}", m_target_ip, m_target_port, file_full_path, e.what());
         ret = false;
     }
 
-    /* 释放资源 */
-    ifs.close();
-    return std::pair<bool, size_t>(ret, trans_bytes);
+    return ftret_type(ret, trans_bytes);
 }
 
-std::pair<bool, size_t> TcpFileTransfer::recvive(const std::string &file_path, const std::string &prefix, const std::string &suffix)
+TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
 {
     std::size_t recv_bytes = 0;
     bool ret = true;
-
-    /* 检测路径是否存在 */
-    if (!checkFilePathExisted(file_path))
-    {
-        log_error("Don't existed file path {}", file_path);
-        return std::pair<bool, size_t>(false, 0);
-    }
 
     /* 获取客户端 */
     sock_type client_sock(*p_ioc);
     if (!m_client_request.dequeue(client_sock))
     {
         log_error("TcpFileTransfer({})获取客户端请求失败", m_server_port);
-        return std::pair<bool, size_t>(false, 0);
+        return ftret_type(false, 0);
     }
 
     /* 接收文件 */
     try
     {
-        // 接收头部信息
-        boost::asio::streambuf header_streambuf;
-        recv_bytes += boost::asio::read_until(client_sock, header_streambuf, '\n');
-        std::istream header_istream(&header_streambuf);
-        std::string header;
-        std::getline(header_istream, header);
-        std::size_t separator_pos = header.find('-');
-        if (separator_pos == std::string::npos)
-        {
-            throw std::runtime_error("Not find separator.");
-        }
-        std::string file_name = header.substr(0, separator_pos);
-        std::size_t file_size = std::stoull(header.substr(separator_pos + 1));
+        std::vector<char> buf(1, '0');
 
-        // 接收文件内容并写入存储路径下文件
+        /* 接收头部信息 */
+        // 读取文件名和文件大小
+        std::string file_name = "";
+        std::size_t file_size = 0;
+        {
+            std::string header = "";
+            while (1) {
+                recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(buf.data(), 1));
+                if (buf[0] == '-') {
+                    file_name = header;
+                    header = "";
+                } else if (buf[0] == ':') {
+                    file_size = std::stoull(header);
+                    break;
+                } else {
+                    header += buf[0];
+                }
+            }
+        }
+
+        // 替换文件完整路径
+        std::size_t rep_filename_pos = file_full_path.find(REP_FILENAME_SYMBOL);
+        if (rep_filename_pos == std::string::npos)
+        {
+            throw std::runtime_error("Can't find replace FILENAME symbol.");
+        }
+        file_full_path.replace(rep_filename_pos, REP_FILENAME_SYMBOL.size(), file_name);
+
+        /* 接收文件内容并写入存储路径下文件 */
         // 打开写入文件
-        std::string file_complete_path = file_path + prefix + file_name + suffix;
-        std::ofstream ofs(file_complete_path, std::ios::binary | std::ios::trunc);
+        std::ofstream ofs(file_full_path, std::ios::binary | std::ios::trunc);
         if (!ofs.is_open())
         {
             throw std::runtime_error("File not existed.");
         }
         // 读取文件内容
-        std::vector<char> buf(TCP_TRANS_TUNK_SIZE);
         std::size_t remaining_bytes = file_size;
+        buf.clear();
+        buf.resize(std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE));
         while (remaining_bytes > 0)
         {
             std::size_t bytes_to_read = std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE);
@@ -170,15 +173,15 @@ std::pair<bool, size_t> TcpFileTransfer::recvive(const std::string &file_path, c
         ofs.flush();
         ofs.close();
 
-        log_info("TcpFileTransfer({})成功接收到客户端文件({}:{} bytes)", m_server_port, file_name, file_size);
+        log_info("TcpFileTransfer({})成功接收到客户端文件({}:{} bytes)", m_server_port, file_full_path, file_size);
     }
     catch(const std::exception& e)
     {
-        log_error("TcpFileTransfer({})接收文件失败, error msg = {}", m_server_port, e.what());
+        log_error("TcpFileTransfer({})接收文件({})失败, error msg = {}", m_server_port, file_full_path, e.what());
         ret = false;
     }
 
     /* 释放资源 */
     client_sock.close();
-    return std::pair<bool, size_t>(ret, recv_bytes);
+    return ftret_type(ret, recv_bytes);
 }

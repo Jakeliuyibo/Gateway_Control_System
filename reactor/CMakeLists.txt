@@ -32,4 +32,4 @@ target_link_libraries(processor logger configparser threadpool)
 # 生成reactor静态库，并进行链接
 add_library(reactor SHARED ${SRC})
 link_directories(${LIBPATH})
-target_link_libraries(reactor logger configparser source event processor)
+target_link_libraries(reactor singleton logger configparser source event processor commdevice)
