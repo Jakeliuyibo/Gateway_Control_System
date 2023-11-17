@@ -1,13 +1,7 @@
-#include <iostream>
-#include <fstream>
-#include <chrono>
-#include <thread>
 #include "filetransfer.h"
 
 using namespace utility;
 using namespace driver;
-
-
 
 SerialFileTransfer::SerialFileTransfer(std::string port_name)
     :

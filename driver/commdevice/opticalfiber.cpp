@@ -1,6 +1,4 @@
-#include "systime.h"
 #include "commdevice.h"
-
 
 using namespace utility;
 using namespace driver;

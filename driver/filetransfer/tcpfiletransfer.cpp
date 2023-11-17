@@ -1,7 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <chrono>
-#include <thread>
 #include "filetransfer.h"
 
 using namespace utility;

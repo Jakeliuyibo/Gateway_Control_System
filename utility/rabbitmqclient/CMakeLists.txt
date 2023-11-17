@@ -8,7 +8,8 @@ set(RABBITMQ_PATH /usr/local)
 # 搜索头文件
 include_directories(
     ${RABBITMQ_PATH}/include
-    ${HEADPATH}
+    ${PROJECT_DIR}/utility/singleton
+    ${PROJECT_DIR}/utility/logger
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 

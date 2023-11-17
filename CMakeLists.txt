@@ -14,12 +14,12 @@ set(EXECPATH ${PROJECT_SOURCE_DIR}/bin)
 
 # 头文件的路径
 set(HEADPATH
-    ${PROJECT_DIR}/utility/logger
+	${PROJECT_DIR}/utility/singleton
     ${PROJECT_DIR}/utility/configparser
 	${PROJECT_DIR}/utility/systime
-	${PROJECT_DIR}/utility/singleton
-    ${PROJECT_DIR}/utility/rabbitmqclient
 	${PROJECT_DIR}/utility/safequeue
+    ${PROJECT_DIR}/utility/logger
+    ${PROJECT_DIR}/utility/rabbitmqclient
 	${PROJECT_DIR}/utility/threadpool
 	${PROJECT_DIR}/driver/filetransfer
 	${PROJECT_DIR}/driver/commdevice
