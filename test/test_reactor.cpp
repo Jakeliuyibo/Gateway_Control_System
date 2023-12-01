@@ -19,15 +19,21 @@ void produce()
 {
     /* 初始化设备 */
     DeviceEvent e1(1, DeviceEvent::EVENT_INIT , "opticalfiber", "");
+    DeviceEvent e2(1, DeviceEvent::EVENT_INIT , "radiodigital", "");
     Reactor::instance()->push(e1);
+    Reactor::instance()->push(e2);
     sleep(1);
 
-    DeviceEvent e2(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test.txt");
-    Reactor::instance()->push(e2);
+    DeviceEvent e3(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test.txt");
+    DeviceEvent e4(2, DeviceEvent::EVENT_WRITE, "radiodigital", "/root/Gateway_Control_System/storage/test.txt");
+    Reactor::instance()->push(e3);
+    Reactor::instance()->push(e4);
     sleep(3);
 
-    DeviceEvent e3(3, DeviceEvent::EVENT_CLOSE , "opticalfiber", "");
-    Reactor::instance()->push(e3);
+    DeviceEvent e5(3, DeviceEvent::EVENT_CLOSE , "opticalfiber", "");
+    DeviceEvent e6(3, DeviceEvent::EVENT_CLOSE , "radiodigital", "");
+    Reactor::instance()->push(e5);
+    Reactor::instance()->push(e6);
 }
 
 int main()

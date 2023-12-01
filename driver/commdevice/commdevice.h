@@ -69,6 +69,10 @@ namespace driver
             RadiodigitalCommDev(IniConfigParser *config);
             ~RadiodigitalCommDev();
             bool handleEvent(DeviceEvent event);
+        private:
+            unsigned short  m_serverport;
+            std::string     m_targetip;
+            unsigned short  m_targetport;
     };
 
     /**

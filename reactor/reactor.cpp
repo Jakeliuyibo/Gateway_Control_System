@@ -18,6 +18,7 @@ void Reactor::init(IniConfigParser *config)
     /* 初始化设备列表 */
     // 初始化
     m_devicelist.emplace("opticalfiber", std::make_unique<OpticalfiberCommDev>(config));      // 光纤设备
+    m_devicelist.emplace("radiodigital", std::make_unique<RadiodigitalCommDev>(config));      // 电台数传设备
     // 绑定可读事件源
     auto func = [this] (DeviceEvent event) {
                     if (event.m_type == DeviceEvent::EVENT_READYREAD) {
@@ -63,7 +64,7 @@ void Reactor::listen()
                     [this] (DeviceEvent event)
                     {
                         log_info("线程池接收到事件id={},类型type={}, 设备device={}, 动作action={}", 
-                                event.m_id, event.m_type, event.m_device, event.m_action);
+                                event.m_id, event.EventTypeMapping[event.m_type], event.m_device, event.m_action);
                         m_devicelist[event.m_device]->handleEvent(event);
                     },
                     event

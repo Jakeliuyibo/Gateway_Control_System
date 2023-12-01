@@ -71,7 +71,11 @@ namespace driver
     };
 
     /**
-     * @description: 基于TCP信道的文件传输
+     * @description: 基于TCP信道的文件传输，文件过大需要基于TCP_TRANS_TUNK_SIZE进行分包，由TCP保证无需重传
+     *               文件传输协议： target                                      server
+     *                              --              connect                     -->
+     *                             <--               "ok!"                      --
+     *                              -- "${file_name}-${file_size}:${file_data}" -->
      */
     class TcpFileTransfer : public FileTransfer
     {
@@ -94,6 +98,7 @@ namespace driver
         private:
             // 公共
             const std::size_t                       TCP_TRANS_TUNK_SIZE = 50;
+            const std::string                       TCP_TRANS_SYNC_SYMBOL = "ok!";
             std::unique_ptr<ioc_type>               p_ioc;
             // 服务器相关
             port_type                               m_server_port;

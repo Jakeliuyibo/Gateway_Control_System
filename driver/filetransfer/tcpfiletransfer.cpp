@@ -53,16 +53,12 @@ TcpFileTransfer::~TcpFileTransfer()
 
 TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name)
 {
+    std::size_t recv_bytes = 0;
     std::size_t trans_bytes = 0;
     bool ret = true;
 
     try
     {
-        /* 打开文件并获取文件大小 */
-        std::ifstream ifs(file_full_path, std::ios::binary | std::ios::ate);
-        auto file_size = ifs.tellg();
-        ifs.seekg(0, std::ios::beg);
-
         /* 创建客户端连接至目标服务器 */
         sock_type sk(*p_ioc);
         boost::system::error_code ec;
@@ -73,18 +69,34 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
             throw std::runtime_error("Connect server failed.");
         }
 
+        /* 等待服务器响应 */
+        std::vector<char> rbuf(3, '0');
+        recv_bytes += boost::asio::read(sk, boost::asio::buffer(rbuf.data(), 3));
+        if (recv_bytes != TCP_TRANS_SYNC_SYMBOL.size() 
+            || rbuf[0] != TCP_TRANS_SYNC_SYMBOL[0] 
+            || rbuf[1] != TCP_TRANS_SYNC_SYMBOL[1]  
+            || rbuf[2] != TCP_TRANS_SYNC_SYMBOL[2])
+        {
+            throw std::runtime_error("Rece sync error.");
+        }
+
+        /* 打开文件并获取文件大小 */
+        std::ifstream ifs(file_full_path, std::ios::binary | std::ios::ate);
+        auto file_size = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
+
         /* 发送文件名+文件大小 */
         std::string header = file_name + "-" + std::to_string(file_size) + ":";
         trans_bytes += boost::asio::write(sk, boost::asio::buffer(header));
 
         /* 发送文件内容 */
-        std::vector<char> buf(TCP_TRANS_TUNK_SIZE);
+        std::vector<char> wbuf(TCP_TRANS_TUNK_SIZE);
         std::size_t remaining_bytes = file_size;
         while (!ifs.eof() && remaining_bytes > 0)   // 分包发送
         {
             std::size_t bytes_to_write = std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE);
-            ifs.read(buf.data(), bytes_to_write);
-            trans_bytes += boost::asio::write(sk, boost::asio::buffer(buf.data(), bytes_to_write));
+            ifs.read(wbuf.data(), bytes_to_write);
+            trans_bytes += boost::asio::write(sk, boost::asio::buffer(wbuf.data(), bytes_to_write));
             remaining_bytes -= bytes_to_write;
         }
 
@@ -105,6 +117,7 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
 TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
 {
     std::size_t recv_bytes = 0;
+    std::size_t trans_bytes = 0;
     bool ret = true;
 
     /* 获取客户端 */
@@ -115,27 +128,31 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
         return ftret_type(false, 0);
     }
 
-    /* 接收文件 */
     try
     {
-        std::vector<char> buf(1, '0');
+        /* 向客户端发出"ok!"同步标志开启文件接收 */
+        trans_bytes += boost::asio::write(client_sock, boost::asio::buffer(TCP_TRANS_SYNC_SYMBOL));
+        if (trans_bytes != TCP_TRANS_SYNC_SYMBOL.size()) 
+        {
+            throw std::runtime_error("Trans sync error.");
+        }
 
-        /* 接收头部信息 */
-        // 读取文件名和文件大小
+        /* 接收文件头部信息 */
+        std::vector<char> rbuf(1, '0');
         std::string file_name = "";
         std::size_t file_size = 0;
         {
             std::string header = "";
             while (1) {
-                recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(buf.data(), 1));
-                if (buf[0] == '-') {
+                recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), 1));
+                if (rbuf[0] == '-') {
                     file_name = header;
                     header = "";
-                } else if (buf[0] == ':') {
+                } else if (rbuf[0] == ':') {
                     file_size = std::stoull(header);
                     break;
                 } else {
-                    header += buf[0];
+                    header += rbuf[0];
                 }
             }
         }
@@ -157,13 +174,13 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
         }
         // 读取文件内容
         std::size_t remaining_bytes = file_size;
-        buf.clear();
-        buf.resize(std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE));
+        rbuf.clear();
+        rbuf.resize(std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE));
         while (remaining_bytes > 0)
         {
             std::size_t bytes_to_read = std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE);
-            recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(buf.data(), bytes_to_read));
-            ofs.write(buf.data(), bytes_to_read);
+            recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), bytes_to_read));
+            ofs.write(rbuf.data(), bytes_to_read);
             remaining_bytes -= bytes_to_read;
         }
         ofs.flush();

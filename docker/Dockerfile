@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-EXPOSE 22 80 1234 5672 8080 15672
+EXPOSE 22 80 1234 5672 8080 8800 8801 15672
 
 # 安装基本工具
 RUN    rm /etc/apt/sources.list                                                                                                                 \

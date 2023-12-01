@@ -16,7 +16,7 @@ namespace reactor
             // 构造
             Event() {}
             // 析构
-            ~Event() {}
+            virtual ~Event() {}
             // 添加属性
             void add(std::string key, std::string val);
             // 获取值
