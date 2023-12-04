@@ -4,6 +4,8 @@
 #include <thread>
 #include <string>
 #include <memory>
+#include <chrono>
+#include <mutex>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include "safequeue.h"
@@ -118,10 +120,39 @@ namespace driver
     {
         using ioc_type      = boost::asio::io_context;
         using serial_type   = boost::asio::serial_port;
+        using callback_type = std::function<void()>;
+
+        public:
+            enum PROTOCOL_CMD
+            {
+                CMD_FILEINFO = 0x01,     // 文件信息
+                CMD_FILEID   = 0x02,     // 文件ID
+                CMD_TUNKDATA = 0x03,     // 块数据
+                CMD_ACK      = 0x04,     // ACK信息
+                CMD_RETRANS  = 0x05      // 重传块数据
+            };
+            struct FileDescription
+            {
+                std::size_t file_id;
+                std::string file_name;
+                std::size_t file_size;
+                std::size_t tunk_size;
+                std::map<std::size_t, std::vector<uint8_t>> tunk_data;
+                FileDescription() {}
+                FileDescription(std::size_t _id, std::string _name, std::size_t _filesize, std::size_t _tunksize)
+                    : file_id(_id), file_name(_name), file_size(_filesize), tunk_size(_tunksize) {}
+            };
+            struct ProtocolPackage
+            {
+                PROTOCOL_CMD cmd;
+                std::vector<uint8_t> payload;
+                ProtocolPackage() {}
+                ProtocolPackage(PROTOCOL_CMD c, std::vector<uint8_t> p) : cmd(c), payload(p) {}
+            };
 
         public:
             // 构造
-            SerialFileTransfer(std::string port_name);
+            SerialFileTransfer(std::string port_name, const callback_type &server_readable_cb);
             // 析构
             ~SerialFileTransfer();
         public:
@@ -130,9 +161,51 @@ namespace driver
             // 接收文件
             ftret_type receive(str_type file_full_path);
         private:
-            std::string                             m_portname;
-            const int                               SERIAL_BAUDRATE = 115200;
+            // 转化协议帧为十六进制字符串
+            std::string _convert_vecu8_to_hexstring(std::vector<uint8_t> &frame);
+            // 校验协议帧
+            void _check_protocol_frame(std::vector<uint8_t> &frame, PROTOCOL_CMD &cmd);
+            // 解析文件信息
+            void _parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size);
+            // 解析块数据
+            void _parse_tunkdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::size_t &tunk_id, std::string &tunk_data);
+            // 解析ACK数据
+            void _parse_ackdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id);
+            // 解析重传数据
+            void _parse_retrans_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::vector<std::size_t> &retrans_tunk_id);
+            // 通过'-'\':'\'\x00'等符号分隔payload
+            void _separate_payload_by_symbol(std::vector<uint8_t> &payload, std::vector<std::string> &parse, int &cnt_dashes, int &cnt_semicolons);
+            // 写入一帧数据，payload长度不能超过PROTOCOL_PAYLOAD_LEN
+            std::size_t _write_bytes(PROTOCOL_CMD cmd, std::vector<uint8_t> payload);
+        private:
+            // 公共
+            const std::size_t                       PROTOCOL_LEN = 10;                  // 串口协议长度
+            const std::vector<uint8_t>              PROTOCOL_START_BITS = {0x69, 0X96}; // 起始位
+            const std::vector<uint8_t>              PROTOCOL_END_BITS = {0x0D, 0x0A};   // 停止位
+            const std::size_t                       PROTOCOL_SB_LEN = PROTOCOL_START_BITS.size();
+            const std::size_t                       PROTOCOL_CMD_LEN = 1;
+            const std::size_t                       PROTOCOL_EB_LEN = PROTOCOL_END_BITS.size();
+            const std::size_t                       PROTOCOL_PAYLOAD_LEN = PROTOCOL_LEN
+                                                                            - PROTOCOL_SB_LEN
+                                                                            - PROTOCOL_CMD_LEN
+                                                                            - PROTOCOL_EB_LEN; 
+
+            const int                               SERIAL_BAUDRATE = 115200;       // 波特率
+            const int                               SERIAL_MAXIMUM_RETRANS = 3;     // 最大重传次数
+
             std::unique_ptr<ioc_type>               p_ioc;
+            std::string                             m_portname;
             std::unique_ptr<serial_type>            p_serialport;
+            // 服务器相关：接收文件
+            SafeQueue<ProtocolPackage>              s_rbuf;                         // 服务端接收到的协议包缓存
+            callback_type                           f_readable_cb;                  // 监听线程通知上层调用receive处理协议包的回调
+            const std::vector<std::size_t>          FILEID_RANGE = {0, 10};         // 服务端文件ID范围
+            SafeQueue<std::size_t>                  s_fileid_allocator;             // 服务端文件ID分配器
+            std::mutex                              s_file_management_lock;
+            std::map<std::size_t, FileDescription>  s_file_management;              // 服务器接收到的文件管理
+            // 客户端相关：发送文件
+            std::map<std::size_t, FileDescription>  c_file_management;              // 客户端发送的文件管理
+
+
     };
 }

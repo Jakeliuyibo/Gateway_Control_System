@@ -84,6 +84,8 @@ namespace driver
             UnderwaterAcousticCommDev(IniConfigParser *config);
             ~UnderwaterAcousticCommDev();
             bool handleEvent(DeviceEvent event);
+        private:
+            std::string  m_serialport;
     };
 
     /**
@@ -95,5 +97,7 @@ namespace driver
             SatelliteCommDev(IniConfigParser *config);
             ~SatelliteCommDev();
             bool handleEvent(DeviceEvent event);
+        private:
+            std::string  m_serialport;
     };
 }

@@ -17,8 +17,10 @@ void Reactor::init(IniConfigParser *config)
 
     /* 初始化设备列表 */
     // 初始化
-    m_devicelist.emplace("opticalfiber", std::make_unique<OpticalfiberCommDev>(config));      // 光纤设备
-    m_devicelist.emplace("radiodigital", std::make_unique<RadiodigitalCommDev>(config));      // 电台数传设备
+    m_devicelist.emplace("opticalfiber"      , std::make_unique<OpticalfiberCommDev>(config));      // 光纤通信设备
+    m_devicelist.emplace("radiodigital"      , std::make_unique<RadiodigitalCommDev>(config));      // 电台数传设备
+    m_devicelist.emplace("underwateracoustic", std::make_unique<UnderwaterAcousticCommDev>(config));// 水声通信设备
+    
     // 绑定可读事件源
     auto func = [this] (DeviceEvent event) {
                     if (event.m_type == DeviceEvent::EVENT_READYREAD) {

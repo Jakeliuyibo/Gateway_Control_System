@@ -20,20 +20,22 @@ void produce()
     /* 初始化设备 */
     DeviceEvent e1(1, DeviceEvent::EVENT_INIT , "opticalfiber", "");
     DeviceEvent e2(1, DeviceEvent::EVENT_INIT , "radiodigital", "");
+    DeviceEvent e3(1, DeviceEvent::EVENT_INIT , "underwateracoustic", "");
     Reactor::instance()->push(e1);
     Reactor::instance()->push(e2);
+    Reactor::instance()->push(e3);
     sleep(1);
 
-    DeviceEvent e3(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test.txt");
-    DeviceEvent e4(2, DeviceEvent::EVENT_WRITE, "radiodigital", "/root/Gateway_Control_System/storage/test.txt");
-    Reactor::instance()->push(e3);
-    Reactor::instance()->push(e4);
-    sleep(3);
+    // DeviceEvent e4(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test.txt");
+    // DeviceEvent e5(2, DeviceEvent::EVENT_WRITE, "radiodigital", "/root/Gateway_Control_System/storage/test.txt");
+    // Reactor::instance()->push(e4);
+    // Reactor::instance()->push(e5);
+    // sleep(3);
 
-    DeviceEvent e5(3, DeviceEvent::EVENT_CLOSE , "opticalfiber", "");
-    DeviceEvent e6(3, DeviceEvent::EVENT_CLOSE , "radiodigital", "");
-    Reactor::instance()->push(e5);
-    Reactor::instance()->push(e6);
+    // DeviceEvent e7(3, DeviceEvent::EVENT_CLOSE , "opticalfiber", "");
+    // DeviceEvent e8(3, DeviceEvent::EVENT_CLOSE , "radiodigital", "");
+    // Reactor::instance()->push(e7);
+    // Reactor::instance()->push(e8);
 }
 
 int main()

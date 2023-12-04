@@ -19,6 +19,7 @@ RUN    rm /etc/apt/sources.list                                                 
     && apt-get install -y build-essential                                                                                                       \
     && apt-get install -y gdb git cmake                                                                                                         \                                                                                         
     && apt-get install -y libssl-dev
+    && apt-get install -y bsdmainutils
 
 # 安装c++第三方库
 RUN    apt-get install -y libspdlog-dev                                                                                                         \
@@ -26,6 +27,10 @@ RUN    apt-get install -y libspdlog-dev                                         
     && apt-get install -y libuv1-dev                                                                                                            \                           
     && apt-get install -y erlang rabbitmq-server                                                                                                \
     && apt-get install -y libjsoncpp-dev
+
+# # 安装python环境
+# RUN    apt-get install -y python3                                                                                                               \
+#     && ln -s /usr/bin/python3 /usr/bin/python                                                                                                   \
 
 # 安装rabbitmq-server环境(TODO 开启自启动服务)
 RUN    service rabbitmq-server start                                                                                                            \
