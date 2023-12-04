@@ -40,49 +40,10 @@ SerialFileTransfer::SerialFileTransfer(std::string port_name, const callback_typ
     }
 
     /* 创建子线程监听客户端连接 */
-    std::thread(
-        [this] ()
-        {
-            try
-            {
-                std::vector<uint8_t> rbuf(PROTOCOL_LEN);
-                for(;;)
-                {
-                    /* 阻塞读取数据 */
-                    std::size_t recv_bytes = boost::asio::read(*p_serialport, boost::asio::buffer(rbuf.data(), PROTOCOL_LEN));
+    std::thread(&SerialFileTransfer::_subthread_listen_client, this).detach();
 
-                    /* 校验 */
-                    PROTOCOL_CMD cmd;
-                    try
-                    {
-                        _check_protocol_frame(rbuf, cmd);
-                    }
-                    catch(const std::exception& e)
-                    {
-                        log_error("SerialFileTransfer({})接收到一包错误数据({}), msg = {}", m_portname, _convert_vecu8_to_hexstring(rbuf), e.what());
-                        continue;
-                    }
-
-                    /* 去除起始位和停止位 */
-                    std::vector<uint8_t> payload(rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN, 
-                                                 rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN + PROTOCOL_PAYLOAD_LEN);
-
-                    ProtocolPackage package(cmd, payload);
-
-                    /* 将数据存入队列缓存 */
-                    s_rbuf.enqueue(package);
-
-                    /* 回调通知上层接口数据可读 */
-                    f_readable_cb();
-                }
-            }
-            catch(const std::exception& e)
-            {
-                log_error("SerialFileTransfer({})监听客户端连接出错, msg = {}", m_portname, e.what());
-            }
-            
-        }
-    ).detach();
+    /* 创建子线程监听服务器文件管理 */
+    std::thread(&SerialFileTransfer::_subthread_listen_manage_server_filedescription, this).detach();
 }
 
 SerialFileTransfer::~SerialFileTransfer()
@@ -167,19 +128,18 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
     }
 
     /* 根据控制位处理数据 */
-    if (package.cmd == CMD_FILEINFO)        // ! 文件信息
+    if      (package.cmd == CMD_FILEINFO)   // ! 文件信息
     {
         /* 解析文件信息，获取file_name\file_size\tunk_size */
         std::string file_name;
-        std::size_t file_size;
-        std::size_t tunk_size;
+        std::size_t file_size, tunk_size;
         try
         {
             _parse_fileinfo_from_payload(package.payload, file_name, file_size, tunk_size);
         }
         catch(const std::exception& e)
         {
-            log_error("SerialFileTransfer({})解析Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            log_error("SerialFileTransfer({})解析FILEINFO的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
             goto ret;
         }
 
@@ -201,30 +161,114 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
         /* 向客户端发送文件ID */
         trans_bytes += SerialFileTransfer::_write_bytes(CMD_FILEID, std::vector<uint8_t>(1, static_cast<uint8_t>(file_id)));
     }
+    else if (package.cmd == CMD_FILEID)     // ! 文件ID
+    {
+        /* 解析文件ID，获取file_name\file_id */
+        std::string file_name;
+        std::size_t file_id;
+        try
+        {
+            _parse_fileid_from_payload(package.payload, file_name, file_id);
+        }
+        catch(const std::exception& e)
+        {
+            log_error("SerialFileTransfer({})解析FILEID的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            goto ret;
+        }
+
+        log_critical("接收到文件名{}和文件ID{}", file_name, file_id);
+
+        // TODO 通知transfer解除阻塞
+    }
     else if (package.cmd == CMD_TUNKDATA)   // ! 块数据
     {
         /* 解析块数据，获取file_id\tunk_id\tunk_data */
+        std::size_t file_id, tunk_id;
+        std::string tunk_data;
+        try
+        {
+            _parse_tunkdata_from_payload(package.payload, file_id, tunk_id, tunk_data);
+        }
+        catch(const std::exception& e)
+        {
+            log_error("SerialFileTransfer({})解析CMD_TUNKDATA的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            goto ret;
+        }
 
-        /* 将块数据存入文件管理 */
+        /* 检测文件id是否存在以及tunk_id是否已存在或超出tunk_size */
+        {
+            std::unique_lock<std::mutex> lock(s_file_management_lock);
+            if (s_file_management.find(file_id) == s_file_management.end())
+            {
+                log_error("SerialFileTransfer({})收到未知的file_id = {}", m_portname, file_id);
+                goto ret;
+            }
 
-        /* 判断块数据是否收集完成，如果完成发送ACK，并释放文件ID */
+            if (tunk_id >= s_file_management[file_id].tunk_size)
+            {
+                log_error("SerialFileTransfer({})收到错误的file_id({})块数据, tunk_id = {}", m_portname, file_id, tunk_id);
+                goto ret;
+            }
 
+            std::map<std::size_t, std::string> &tunk_mp = s_file_management[file_id].tunk_data;
+            if (tunk_mp.find(tunk_id) != tunk_mp.end())
+            {
+                log_error("SerialFileTransfer({})重复接收file_id({})块数据, tunk_id = {}", m_portname, file_id, tunk_id);
+                goto ret;
+            }
+
+            /* 将块数据存入文件管理 */
+            tunk_mp[tunk_id] = tunk_data; 
+
+            /* 判断块数据是否收集完成 */
+            if (tunk_mp.size() == s_file_management[file_id].tunk_size)
+            {
+                log_critical("file_id = {}收集块完成", file_id);
+                /* 如果完成发送ACK，并释放文件ID */ // TODO
+            }
+        }
     }
     else if (package.cmd == CMD_ACK)        // ! ack数据
     {
         /* 解析ACK数据，获取file_id */
+        std::size_t file_id;
+        try
+        {
+            _parse_ack_from_payload(package.payload, file_id);
+        }
+        catch(const std::exception& e)
+        {
+            log_error("SerialFileTransfer({})解析ACK的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            goto ret;
+        }
 
-        /* 遍历c_file_management，释放资源 */
+        log_critical("接收到文件{}的ACK", file_id);
 
-        /* 从set中获取transfer线程阻塞的条件变量，通知其解锁 */
+        /* 遍历c_file_management，释放资源 */ //TODO
+
+        /* 从set中获取transfer线程阻塞的条件变量，通知其解锁 */ //TODO
     }
     else if (package.cmd == CMD_RETRANS)    // ! 重传
     {
         /* 解析重传数据，获取file_id和需要重传的块数据 */
+        /* 解析ACK数据，获取file_id */
+        std::size_t file_id;
+        std::vector<std::size_t> retrans_tunk_id;
+        try
+        {
+            _parse_retrans_from_payload(package.payload, file_id, retrans_tunk_id);
+        }
+        catch(const std::exception& e)
+        {
+            log_error("SerialFileTransfer({})解析RETRANS的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            goto ret;
+        }
 
-        /* 遍历c_file_management */
+        log_critical("接收到文件{}的RETRANS, id[0] = {} id[1] = {}", file_id, retrans_tunk_id[0], retrans_tunk_id[1]);
 
-        /* 从set中获取transfer线程阻塞的条件变量，通知其解锁 */
+        /* 遍历c_file_management */ // TODO
+
+        /* 从set中获取transfer线程阻塞的条件变量，通知其解锁 */ // TODO
     }
 
 ret:
@@ -232,8 +276,88 @@ ret:
 }
 
 /**********************************************************************************
+ *************************    Sub Thread    ***************************************
+ **********************************************************************************/
+// 创建子线程监听客户端数据
+void SerialFileTransfer::_subthread_listen_client()
+{
+    try
+    {
+        std::vector<uint8_t> rbuf(PROTOCOL_LEN);
+        for(;;)
+        {
+            /* 阻塞读取数据 */
+            std::size_t recv_bytes = boost::asio::read(*p_serialport, boost::asio::buffer(rbuf.data(), PROTOCOL_LEN));
+
+            /* 校验 */
+            PROTOCOL_CMD cmd;
+            try
+            {
+                _check_protocol_frame(rbuf, cmd);
+            }
+            catch(const std::exception& e)
+            {
+                log_error("SerialFileTransfer({})接收到一包错误数据({}), msg = {}", m_portname, _convert_vecu8_to_hexstring(rbuf), e.what());
+                continue;
+            }
+
+            /* 去除起始位和停止位 */
+            std::vector<uint8_t> payload(rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN, 
+                                            rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN + PROTOCOL_PAYLOAD_LEN);
+
+            ProtocolPackage package(cmd, payload);
+
+            /* 将数据存入队列缓存 */
+            s_rbuf.enqueue(package);
+
+            /* 回调通知上层接口数据可读 */
+            f_readable_cb();
+        }
+    }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFileTransfer({})监听客户端连接出错, msg = {}", m_portname, e.what());
+    }
+}
+
+// 创建子线程监听服务器文件管理
+void SerialFileTransfer::_subthread_listen_manage_server_filedescription()
+{
+    try
+    {
+        for(;;)
+        {
+            {
+                std::unique_lock<std::mutex> lock(s_file_management_lock);
+                for(auto &it : s_file_management)
+                {
+                    auto file_info = it.second;
+                    log_warning("文件id{}，文件名{} 文件大小{} 块大小{}", it.first, 
+                                                                        file_info.file_name, 
+                                                                        file_info.file_size,
+                                                                        file_info.tunk_size
+                                                                        );
+                    for(auto &tunk : file_info.tunk_data)
+                    {
+                        log_warning("-->块{}:{}", tunk.first, tunk.second);
+                    }
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        }
+    }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFileTransfer({})监听服务器文件管理异常, msg = {}", m_portname, e.what());
+    }
+}
+
+/**********************************************************************************
  *************************    Private    ******************************************
  **********************************************************************************/
+
+
 // 转化协议帧为十六进制字符串
 void SerialFileTransfer::_check_protocol_frame(std::vector<uint8_t> &frame, PROTOCOL_CMD &cmd)
 {
@@ -305,6 +429,25 @@ void SerialFileTransfer::_parse_fileinfo_from_payload(std::vector<uint8_t> &payl
     tunk_size = std::stoull(arr[2]);
 }
 
+// 解析文件ID,"${file_name}-${file_id}"
+void SerialFileTransfer::_parse_fileid_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_id)
+{
+    /* 解析字符串 */
+    int cntDashes = 0;               // 折号出现次数
+    int cntSemicolons = 0;           // 分号出现次数
+    std::vector<std::string> arr;
+    _separate_payload_by_symbol(payload, arr, cntDashes, cntSemicolons);
+
+    /* 检查格式是否规范 */
+    if ((arr.size() != 2) || (cntDashes != 1))
+    {
+        throw std::runtime_error("Error payload format.");
+    }
+
+    file_name = arr[0];
+    file_id = std::stoull(arr[1]);
+}
+
 // 解析块数据，"${file_id}-${tunk_id}:${tunk_data}"
 void SerialFileTransfer::_parse_tunkdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::size_t &tunk_id, std::string &tunk_data)
 {
@@ -326,7 +469,7 @@ void SerialFileTransfer::_parse_tunkdata_from_payload(std::vector<uint8_t> &payl
 }
 
 // 解析ACK数据,"${file_id}"
-void SerialFileTransfer::_parse_ackdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id)
+void SerialFileTransfer::_parse_ack_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id)
 {
     /* 解析字符串 */
     int cntDashes = 0;               // 折号出现次数

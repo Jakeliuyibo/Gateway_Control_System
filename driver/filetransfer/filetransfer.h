@@ -137,7 +137,7 @@ namespace driver
                 std::string file_name;
                 std::size_t file_size;
                 std::size_t tunk_size;
-                std::map<std::size_t, std::vector<uint8_t>> tunk_data;
+                std::map<std::size_t, std::string> tunk_data;
                 FileDescription() {}
                 FileDescription(std::size_t _id, std::string _name, std::size_t _filesize, std::size_t _tunksize)
                     : file_id(_id), file_name(_name), file_size(_filesize), tunk_size(_tunksize) {}
@@ -161,16 +161,23 @@ namespace driver
             // 接收文件
             ftret_type receive(str_type file_full_path);
         private:
+            // 创建子线程监听客户端数据
+            void _subthread_listen_client();
+            // 创建子线程监听服务器文件管理
+            void _subthread_listen_manage_server_filedescription();
+        private:
             // 转化协议帧为十六进制字符串
             std::string _convert_vecu8_to_hexstring(std::vector<uint8_t> &frame);
             // 校验协议帧
             void _check_protocol_frame(std::vector<uint8_t> &frame, PROTOCOL_CMD &cmd);
             // 解析文件信息
             void _parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size);
+            // 解析文件ID
+            void _parse_fileid_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_id);
             // 解析块数据
             void _parse_tunkdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::size_t &tunk_id, std::string &tunk_data);
             // 解析ACK数据
-            void _parse_ackdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id);
+            void _parse_ack_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id);
             // 解析重传数据
             void _parse_retrans_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::vector<std::size_t> &retrans_tunk_id);
             // 通过'-'\':'\'\x00'等符号分隔payload
