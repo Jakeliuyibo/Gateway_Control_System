@@ -29,7 +29,7 @@ namespace utility
             // 可选阻塞或非阻塞取出
             bool dequeue(T &t, bool block = false)
             {
-                std::unique_lock<std::mutex> lock(m_lock); // 添加互斥锁，若失败则堵住
+                std::unique_lock<std::mutex> lock(m_lock);
                 if (m_queue.empty())
                 {
                     if (block) {
@@ -42,6 +42,17 @@ namespace utility
                 t = std::move(m_queue.front());
                 m_queue.pop();
                 return true;
+            }
+            // 非阻塞方式取出所有数据到容器
+            bool dequeueAllIntoVec(std::vector<T> & vec)
+            {
+                std::unique_lock<std::mutex> lock(m_lock);
+                while (!m_queue.empty())
+                {
+                    vec.emplace_back(std::move(m_queue.front()));
+                    m_queue.pop();
+                }
+                return !vec.empty();
             }
             // 是否为空
             bool empty()
