@@ -10,6 +10,7 @@ include_directories(
     ${RABBITMQ_PATH}/include
     ${PROJECT_DIR}/utility/singleton
     ${PROJECT_DIR}/utility/logger
+    ${PROJECT_DIR}/utility/safequeue
     ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
@@ -22,4 +23,4 @@ add_library(rabbitmqclient SHARED ${SRC})
 target_link_libraries(rabbitmqclient ${RABBITMQ_PATH}/lib/librabbitmq.so)
 
 link_directories(${LIBPATH})
-target_link_libraries(rabbitmqclient logger)
+target_link_libraries(rabbitmqclient logger safequeue)

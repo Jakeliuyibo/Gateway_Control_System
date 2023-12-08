@@ -37,7 +37,7 @@ int RabbitMqClient::connect()
     /* 检测参数 */
     if (m_hostname.empty() || m_port <= 0 || m_username.empty() || m_password.empty())
     {
-        log_error("Failed to construct RabbitMqClient object");
+        log_error("RabbitMqClient建立连接时参数错误");
         return -1;
     }
 
@@ -45,7 +45,7 @@ int RabbitMqClient::connect()
     m_conn = amqp_new_connection();
     if (m_conn == nullptr)
     {
-        log_error("Failed to allocate rabbitmq connection ptr");
+        log_error("RabbitMqClient分配连接器失败");
         return -2;
     }
 
@@ -53,7 +53,7 @@ int RabbitMqClient::connect()
     amqp_socket_t *m_socket = amqp_tcp_socket_new(m_conn);
     if (m_socket == nullptr)
     {
-        log_error("Failed to allocate rabbitmq socket ptr");
+        log_error("RabbitMqClient分配网络端口失败");
         return -3;
     }
 
@@ -61,7 +61,7 @@ int RabbitMqClient::connect()
     int isOpenSocket = amqp_socket_open(m_socket, m_hostname.c_str(), m_port);
     if (isOpenSocket < 0)
     {
-        log_error("Failed to bind rabbitmq socket ip and port");
+        log_error("RabbitMqClient绑定ip和端口失败");
         return -4;
     }
 
@@ -74,10 +74,10 @@ int RabbitMqClient::connect()
                                       AMQP_SASL_METHOD_PLAIN,
                                       m_username.c_str(),
                                       m_password.c_str()),
-                           "Connect");
+                           "建立连接");
     if (isLogin < 0)
     {
-        log_error("Failed to login rabbitmq username and password");
+        log_error("RabbitMqClient登录服务器失败");
         return -5;
     }
 
@@ -85,7 +85,7 @@ int RabbitMqClient::connect()
     amqp_channel_open_ok_t *isOpenChannel = amqp_channel_open(m_conn, m_channel);
     if (!isOpenChannel)
     {
-        log_error("Failed to open rabbitmq channel");
+        log_error("RabbitMqClient打开通道失败");
         return -6;
     }
     return 0;
@@ -100,18 +100,18 @@ int RabbitMqClient::disconnect()
     if (m_conn != nullptr)
     {
         /* 1、关闭通道 */
-        ret = errorMsg(amqp_channel_close(m_conn, m_channel, AMQP_REPLY_SUCCESS), "Close Channel");
+        ret = errorMsg(amqp_channel_close(m_conn, m_channel, AMQP_REPLY_SUCCESS), "关闭通道");
         if (ret < 0)
         {
-            log_error("Failed to close rabbitmq channel");
+            log_error("RabbitMqClient关闭通道失败");
             return ret;
         }
 
         /* 2、关闭连接 */
-        ret = errorMsg(amqp_connection_close(m_conn, AMQP_REPLY_SUCCESS), "Close Connection");
+        ret = errorMsg(amqp_connection_close(m_conn, AMQP_REPLY_SUCCESS), "关闭连接");
         if (ret < 0)
         {
-            log_error("Failed to close rabbitmq connection");
+            log_error("RabbitMqClient关闭连接失败");
             return ret;
         }
 
@@ -119,7 +119,7 @@ int RabbitMqClient::disconnect()
         ret = amqp_destroy_connection(m_conn);
         if (ret < 0)
         {
-            log_error("Failed to destory rabbitmq conn");
+            log_error("RabbitMqClient注销连接器");
             return ret;
         }
 
@@ -127,7 +127,7 @@ int RabbitMqClient::disconnect()
     }
     else
     {
-        log_warning("Try to disconnect a empty rabbitm connection");
+        log_warning("RabbitMqClient尝试打开一个不存在的连接");
         return -4;
     }
 
@@ -150,7 +150,7 @@ int RabbitMqClient::declareExchange(CExchange &exchange)
                           exchange.m_internal,
                           amqp_empty_table);
 
-    return errorMsg(amqp_get_rpc_reply(m_conn), "Declare exchange");
+    return errorMsg(amqp_get_rpc_reply(m_conn), "声明交换器");
 }
 
 /**
@@ -168,7 +168,7 @@ int RabbitMqClient::declareQueue(CQueue &queue)
                        queue.m_autodelete,
                        amqp_empty_table);
 
-    return errorMsg(amqp_get_rpc_reply(m_conn), "Declare queue");
+    return errorMsg(amqp_get_rpc_reply(m_conn), "声明队列");
 }
 
 /**
@@ -183,7 +183,7 @@ int RabbitMqClient::bindQueueToExchange(const std::string &queue, const std::str
                     amqp_cstring_bytes(bindkey.c_str()),
                     amqp_empty_table);
 
-    return errorMsg(amqp_get_rpc_reply(m_conn), "Bind queue to exchange");
+    return errorMsg(amqp_get_rpc_reply(m_conn), "绑定队列到交换机");
 }
 
 /**
@@ -201,29 +201,28 @@ int RabbitMqClient::publish(const std::string &exchange_name, const std::string 
                                  amqp_cstring_bytes(message.m_data.c_str()));
     if (ret != AMQP_STATUS_OK)
     {
-        log_error("rabbitmq client publish message");
-        return errorMsg(amqp_get_rpc_reply(m_conn), "Publish message");
+        log_error("RabbitMq客户端发布消息出错");
+        return errorMsg(amqp_get_rpc_reply(m_conn), "发布消息");
     }
 
     return 0;
 }
 
-
 /**
  * @description: 非阻塞方式消费，底层以amqp的get和read方法实现，每次主动向服务器拉取一条消息
  */
-std::string RabbitMqClient::consume_nb(const std::string &queue_name, bool no_ack)
+std::string RabbitMqClient::get(const std::string &queue_name, bool no_ack)
 {
-    std::vector<std::string> vec_msg = consume_nb(queue_name, 1, no_ack);
+    std::vector<std::string> vec_msg = get(queue_name, 1, no_ack);
     if (vec_msg.size() != 1)
     {
-        log_warning("Try to get one message from rabbitmq server, but get null or more than one");
+        log_warning("尝试以非阻塞读取一条消息,但是获得了NULL或多个");
         return "";
     }
 
     return vec_msg[0];
 }
-std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_name, int num, bool no_ack)
+std::vector<std::string> RabbitMqClient::get(const std::string &queue_name, int num, bool no_ack)
 {
     std::vector<std::string> ret_msg;
 
@@ -279,74 +278,78 @@ std::vector<std::string> RabbitMqClient::consume_nb(const std::string &queue_nam
 /**
  * @description: 阻塞方式消费，底层为consume实现，本地被动一次性拉取服务器所有消息，依次由客户端消费
  */
-std::string RabbitMqClient::consume_b(const std::string &queue_name, struct timeval *timeout, bool no_ack)
-{
-    std::vector<std::string> vec_msg = consume_b(queue_name, 1, timeout, no_ack);
-    if(vec_msg.size() != 1)
-    {
-        log_warning("Try to consume one message from rabbitmq server, but get null or more than one");
-        return "";
-    }
 
-    return vec_msg[0];
+void RabbitMqClient::consume_listen(const std::string &queue_name, struct timeval *timeout, bool no_ack)
+{
+    std::thread(
+        [this, queue_name, timeout, no_ack] ()
+        {
+            try
+            {
+                // /* 1、设置通道消费的限制 */
+                // amqp_basic_qos_ok_t *retQosOk = amqp_basic_qos(m_conn,
+                //                                                m_channel,
+                //                                                0,               // 预取消息的字节数prefetch_size 0：不限制大小
+                //                                                prefetch_count,  // 预取消息的数量prefetch_count
+                //                                                false);          // 是否将预取条件应用到整个通道 0：不应用
+                // if (!retQosOk)
+                // {
+                //     errorMsg(amqp_get_rpc_reply(m_conn), "Set consumer limit(qos)");
+                //     throw std::runtime_error("Basic qoe");
+                // }
+
+                /* 2、创建消费者 */
+                amqp_basic_consume_ok_t *retBasicConsume = amqp_basic_consume(m_conn,
+                                                                            m_channel,
+                                                                            amqp_cstring_bytes(queue_name.c_str()),
+                                                                            amqp_empty_bytes,
+                                                                            false,  // no_local 0:接收 1:不接收
+                                                                            no_ack, // no_ack 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
+                                                                            false,  // exclusive 0:不独占 1:当前连接不在时队列自动删除
+                                                                            amqp_empty_table);
+                if (!retBasicConsume)
+                {
+                    errorMsg(amqp_get_rpc_reply(m_conn), "Consumer basic");
+                    throw std::runtime_error("Consumer basic");
+                }
+
+                for(;;)
+                {
+                    // amqp_maybe_release_buffers(m_conn);
+
+                    /* 3、消费 */
+                    amqp_envelope_t envelope;
+                    int isConsume = errorMsg(amqp_consume_message(m_conn, &envelope, timeout, 0), "Consume message");
+                    if (isConsume < 0)
+                    {
+                        log_error("Faild to consume message from rabbitmq server");
+                        throw std::runtime_error("Consume message");
+                    }
+
+                    /* 4、封装消息 */
+                    r_store.enqueue(std::string((char *)envelope.message.body.bytes, (char *)envelope.message.body.bytes + envelope.message.body.len));
+
+                    /* 5、应答ACK */
+                    if(no_ack == false)
+                    {
+                        amqp_basic_ack(m_conn, m_channel, envelope.delivery_tag, false);
+                    }
+
+                    /* 6、删除封装容器 */
+                    amqp_destroy_envelope(&envelope);
+                }
+            }
+            catch (const std::exception &e)
+            {
+                log_error("RabbitMqClient消费异常, msg = {}", e.what());
+            }
+        }
+    ).detach();
 }
 
-std::vector<std::string> RabbitMqClient::consume_b(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack)
+bool RabbitMqClient::consume(std::string &msg, bool block)
 {
-    std::vector<std::string> ret_msg;
-
-    /* 1、设置通道消费的限制 */
-    amqp_basic_qos_ok_t *retQosOk = amqp_basic_qos(m_conn,
-                                                   m_channel,
-                                                   0,       // 预取消息的字节数prefetch_size 0：不限制大小
-                                                   num,     // 预取消息的数量prefetch_count 1：取1条消息
-                                                   false);  // 是否将预取条件应用到整个通道 0：不应用
-    if (!retQosOk)
-    {
-        errorMsg(amqp_get_rpc_reply(m_conn), "Set consumer limit(qos)");
-        return ret_msg;
-    }
-
-    /* 2、创建消费者 */
-    amqp_basic_consume_ok_t *retBasicConsume = amqp_basic_consume(m_conn,
-                                                                  m_channel,
-                                                                  amqp_cstring_bytes(queue_name.c_str()),
-                                                                  amqp_empty_bytes,
-                                                                  false,  // no_local 0:接收 1:不接收
-                                                                  no_ack, // no_ack 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
-                                                                  false,  // exclusive 0:不独占 1:当前连接不在时队列自动删除
-                                                                  amqp_empty_table);
-    if (!retBasicConsume)
-    {
-        errorMsg(amqp_get_rpc_reply(m_conn), "Consumer basic");
-        return ret_msg;
-    }
-
-    while (num--)
-    {
-        /* 3、消费 */
-        amqp_envelope_t envelope;
-        int isConsume = errorMsg(amqp_consume_message(m_conn, &envelope, timeout, 0), "Consume message");
-        if (isConsume < 0)
-        {
-            log_error("Faild to consume no.{} message from rabbitmq server", num);
-            return ret_msg;
-        }
-
-        /* 4、封装消息 */
-        ret_msg.emplace_back(std::string((char *)envelope.message.body.bytes, (char *)envelope.message.body.bytes + envelope.message.body.len));
-
-        /* 5、应答ACK */
-        if(no_ack == false)
-        {
-            amqp_basic_ack(m_conn, m_channel, envelope.delivery_tag, false);
-        }
-
-        /* 6、删除封装容器 */
-        amqp_destroy_envelope(&envelope);
-    }
-
-    return ret_msg;
+    return r_store.dequeue(msg, true); 
 }
 
 /*************************************************************************
@@ -360,21 +363,40 @@ std::vector<std::string> RabbitMqClient::consume_b(const std::string &queue_name
  */
 int RabbitMqClient::errorMsg(const amqp_rpc_reply_t &reply, const std::string &desc)
 {
+    amqp_connection_close_t *de;
     switch (reply.reply_type)
     {
-    case AMQP_RESPONSE_NORMAL:
-        return 0;
-    case AMQP_RESPONSE_NONE:
-        log_error("RabbitMQ AMQP Response None Error, where is occured in {}", desc.c_str());
-        break;
-    case AMQP_RESPONSE_LIBRARY_EXCEPTION:
-        log_error("RabbitMQ AMQP Response Library Error, where is occured in {}", desc.c_str());
-        break;
-    case AMQP_RESPONSE_SERVER_EXCEPTION:
-        log_error("RabbitMQ AMQP Response Server Error, where is occured in {}", desc.c_str());
-        break;
-    default:
-        break;
+        case AMQP_RESPONSE_NORMAL:
+            return 0;
+
+        case AMQP_RESPONSE_NONE:
+            log_error("RabbitMQ{}时,发生Response None错误", desc.c_str());
+            break;
+
+        case AMQP_RESPONSE_LIBRARY_EXCEPTION:
+            log_error("RabbitMQ{}时,发生Response Library错误", desc.c_str());
+            break;
+
+        case AMQP_RESPONSE_SERVER_EXCEPTION:
+            // switch(reply.reply.id)
+            // {
+            //     case AMQP_CONNECTION_CLOSE_METHOD:
+            //         de = (amqp_connection_close_t *)reply.reply.decoded;
+            //         log_error("RabbitMQ{}时,发生Response Server的CONNECTION CLOSE错误({}), msg = ", desc.c_str(), de->reply_code, std::string((char *)de->reply_text.bytes, de->reply_text.len));
+            //         break;
+            //     case AMQP_CHANNEL_CLOSE_METHOD:
+            //         de = (amqp_connection_close_t *)reply.reply.decoded;
+            //         log_error("RabbitMQ{}时,发生Response Server的CHANNEL CLOSE错误({}), msg = ", desc.c_str(), de->reply_code, std::string((char *)de->reply_text.bytes, de->reply_text.len));
+            //         break;
+            //     default:
+            //         log_error("RabbitMQ{}时,发生未知的Response Server错误", desc.c_str());
+            //         break;
+            // }
+            log_error("RabbitMQ{}时,发生未知的Response Server错误", desc.c_str());
+            break;
+
+        default:
+            break;
     }
 
     return -1;

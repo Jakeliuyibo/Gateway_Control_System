@@ -3,9 +3,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <exception>
+#include <condition_variable>
 #include "rabbitmq-c/amqp.h"
 #include "rabbitmq-c/tcp_socket.h"
-
+#include "safequeue.h"
 
 namespace utility
 {
@@ -90,13 +93,13 @@ namespace utility
             // 发布消息
             int publish(const std::string &exchange_name, const std::string &routing_key_name, const CMessage &message);
 
-            // 非阻塞方式消费
-            std::string consume_nb(const std::string &queue_name, bool no_ack=true);
-            std::vector<std::string> consume_nb(const std::string &queue_name, int num, bool no_ack=true);
+            // 底层基于get方式，主动向服务器拉取
+            std::string get(const std::string &queue_name, bool no_ack=true);
+            std::vector<std::string> get(const std::string &queue_name, int num, bool no_ack=true);
 
-            // 阻塞方式消费
-            std::string consume_b(const std::string &queue_name, struct timeval *timeout, bool no_ack=true);
-            std::vector<std::string> consume_b(const std::string &queue_name, int num, struct timeval *timeout, bool no_ack=true);
+            // 底层基于consume方式，由服务器主动推送
+            void consume_listen(const std::string &queue_name, struct timeval *timeout=nullptr, bool no_ack=true);
+            bool consume(std::string &msg, bool block=true);
 
         private:
             // 处理错误信息
@@ -107,8 +110,12 @@ namespace utility
             int m_port;                          // 端口
             std::string m_username;              // 用户名
             std::string m_password;              // 密码
-            amqp_connection_state_t m_conn;      // AMQP连接
             int m_channel;                       // 通道
+            amqp_connection_state_t m_conn;      // AMQP连接
+
+            /* 客户端接收的资源 */
+            const int prefetch_count = 1000;     // 预取的消息个数
+            SafeQueue<std::string>  r_store;
     };
 
     // 获取RabbitMq版本
