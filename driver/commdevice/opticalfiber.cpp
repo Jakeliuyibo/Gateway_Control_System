@@ -28,6 +28,7 @@ bool OpticalfiberCommDev::handleEvent(DeviceEvent event)
     switch(event.m_type)
     {
         case DeviceEvent::EVENT_INIT:            /* 创建文件传输对象 */
+            log_info("光纤通信设备初始化");
             p_filetransfer = new TcpFileTransfer(
                 m_serverport,
                 [this] ()
@@ -36,19 +37,18 @@ bool OpticalfiberCommDev::handleEvent(DeviceEvent event)
                     f_serverreable_cb(event);
                 }, 
                 m_targetip, m_targetport);
-            log_info("光纤通信设备初始化");
             break;
         case DeviceEvent::EVENT_WRITE:            /* 传输文件       */
+            log_debug("光纤通信设备传输文件");
             p_filetransfer->transfer(event.m_action);
-            log_info("光纤通信设备传输文件");
             break;
         case DeviceEvent::EVENT_READ:            /* 读取文件        */
+            log_debug("光纤通信设备读取文件");
             p_filetransfer->receive(m_storagepath, m_storageextentprefix, getSystimeByFilenameFormat());
-            log_info("光纤通信设备读取文件");
             break;
         case DeviceEvent::EVENT_CLOSE:          /* 关闭文件传输对象  */
-            close();
             log_info("光纤通信设备关闭传输");
+            close();
             break;
         case DeviceEvent::EVENT_READYREAD:
         case DeviceEvent::EVENT_OTHER:

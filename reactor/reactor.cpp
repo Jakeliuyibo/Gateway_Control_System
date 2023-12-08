@@ -20,6 +20,7 @@ void Reactor::init(IniConfigParser *config)
     m_devicelist.emplace("opticalfiber"      , std::make_unique<OpticalfiberCommDev>(config));      // 光纤通信设备
     m_devicelist.emplace("radiodigital"      , std::make_unique<RadiodigitalCommDev>(config));      // 电台数传设备
     m_devicelist.emplace("underwateracoustic", std::make_unique<UnderwaterAcousticCommDev>(config));// 水声通信设备
+    m_devicelist.emplace("satellite"         , std::make_unique<SatelliteCommDev>(config));         // 卫星通信设备
     
     // 绑定可读事件源
     auto func = [this] (DeviceEvent event) {
@@ -65,8 +66,8 @@ void Reactor::listen()
                 auto fut = p_processor->submit(
                     [this] (DeviceEvent event)
                     {
-                        log_info("线程池接收到事件id={},类型type={}, 设备device={}, 动作action={}", 
-                                event.m_id, event.EventTypeMapping[event.m_type], event.m_device, event.m_action);
+                        log_debug("线程池接收到事件{},设备{}处理{}动作{}", 
+                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action);
                         m_devicelist[event.m_device]->handleEvent(event);
                     },
                     event

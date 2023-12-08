@@ -33,7 +33,8 @@ bool Logger::init(  const std::string &filepath,
         {
             // auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filepath, 10 * 1024 * 1024, 5);
             auto file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(filepath, 23, 59);
-            const char * file_format = "[%Y-%m-%d %T.%e] <pid %P:%t> [%^%l%$] [%s:%!:%#] %v";
+            // const char * file_format = "[%Y-%m-%d %T.%e] <pid %P:%t> [%^%l%$] [%s:%!:%#] %v";
+            const char * file_format = "[%Y-%m-%d %T.%e] [%^%l%$] %v";
             file_sink->set_pattern(file_format);
             file_sink->set_level((spdlog::level::level_enum)level_file);
             vecSink.emplace_back(file_sink);

@@ -1,4 +1,3 @@
-#include <iostream>
 #include "source.h"
 
 using namespace utility;
@@ -39,6 +38,7 @@ Source::Source(IniConfigParser *parser)
         p_rabbitmqclient->declareExchange(ex);
         p_rabbitmqclient->declareQueue(qu);
         p_rabbitmqclient->bindQueueToExchange(m_queuename, m_exchangename, m_routingkey);
+        p_rabbitmqclient->consume_listen(m_queuename);
     }
 }
 
@@ -67,7 +67,8 @@ std::string Source::pop()
 
     {
         std::unique_lock<std::mutex> lock(m_rlock);
-        msg = p_rabbitmqclient->consume_b(m_queuename, NULL, true);
+        // msg = p_rabbitmqclient->get(m_queuename, true);
+        p_rabbitmqclient->consume(msg, true);
     }
 
     log_trace("Source从RabbitMq client队列取出消息{}", msg);

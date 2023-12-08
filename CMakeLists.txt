@@ -3,10 +3,10 @@ project(Middleware_development)
 
 set(CMAKE_CXX_STANDARD 14)
 
-# 定义变量
 # 工程目录
 set(PROJECT_DIR ${PROJECT_SOURCE_DIR})
-# 静态库生成的路径
+
+# 库生成的路径
 set(LIBPATH ${PROJECT_SOURCE_DIR}/lib)
 
 # 可执行文件的路径
@@ -27,6 +27,7 @@ set(HEADPATH
 	)
 
 # 添加子目录
+add_subdirectory(thirdparty)
 add_subdirectory(utility)
 add_subdirectory(driver)
 add_subdirectory(reactor)

@@ -4,6 +4,7 @@
 #include <thread>
 #include <string>
 #include <memory>
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <boost/asio.hpp>
@@ -131,16 +132,37 @@ namespace driver
                 CMD_ACK      = 0x04,     // ACK信息
                 CMD_RETRANS  = 0x05      // 重传块数据
             };
-            struct FileDescription
+            struct FileReceDescription
             {
                 std::size_t file_id;
                 std::string file_name;
                 std::size_t file_size;
                 std::size_t tunk_size;
                 std::map<std::size_t, std::string> tunk_data;
-                FileDescription() {}
-                FileDescription(std::size_t _id, std::string _name, std::size_t _filesize, std::size_t _tunksize)
-                    : file_id(_id), file_name(_name), file_size(_filesize), tunk_size(_tunksize) {}
+                std::chrono::system_clock::time_point recv_time;    // 接收时间，用于超时重传
+                std::size_t retrans_cnt;
+                FileReceDescription() {}
+                FileReceDescription(std::size_t _id, std::string _name, std::size_t _filesize, std::size_t _tunksize)
+                    :   file_id(_id), file_name(_name), file_size(_filesize), tunk_size(_tunksize),
+                        recv_time(std::chrono::system_clock::now()), retrans_cnt(0) {}
+            };
+            struct FileTransferDescription
+            {
+                std::size_t file_id;
+                std::string file_name;
+                std::size_t file_size;
+                std::size_t tunk_size;
+                std::vector<std::string> tunk_data;
+                std::mutex block_lock;                  // 阻塞的锁
+                std::condition_variable block_cv;       // 阻塞条件变量
+                bool flag_recv_fileid;
+                bool flag_recv_ack;
+                bool flag_recv_retrans;
+                std::vector<std::size_t> retrans_tunk_id;
+                FileTransferDescription() : FileTransferDescription("") {}
+                FileTransferDescription(std::string _fn) 
+                    :   file_name(_fn), 
+                        flag_recv_fileid(false), flag_recv_ack(false), flag_recv_retrans(false) {}
             };
             struct ProtocolPackage
             {
@@ -181,38 +203,55 @@ namespace driver
             // 解析重传数据
             void _parse_retrans_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::vector<std::size_t> &retrans_tunk_id);
             // 通过'-'\':'\'\x00'等符号分隔payload
-            void _separate_payload_by_symbol(std::vector<uint8_t> &payload, std::vector<std::string> &parse, int &cnt_dashes, int &cnt_semicolons);
+            void _separate_payload_by_symbol(std::vector<uint8_t> &payload, std::vector<std::string> &parse, int &cnt_separator);
             // 写入一帧数据，payload长度不能超过PROTOCOL_PAYLOAD_LEN
             std::size_t _write_bytes(PROTOCOL_CMD cmd, std::vector<uint8_t> payload);
+            std::size_t _write_bytes(PROTOCOL_CMD cmd, std::vector<char> payload);
+            std::size_t _write_bytes(PROTOCOL_CMD cmd, std::string payload);
+            // 将file_id/tunk_id转化为固定长度的字符串
+            std::string _id_format_transfomer(std::size_t id);
         private:
             // 公共
-            const std::size_t                       PROTOCOL_LEN = 10;                  // 串口协议长度
-            const std::vector<uint8_t>              PROTOCOL_START_BITS = {0x69, 0X96}; // 起始位
-            const std::vector<uint8_t>              PROTOCOL_END_BITS = {0x0D, 0x0A};   // 停止位
-            const std::size_t                       PROTOCOL_SB_LEN = PROTOCOL_START_BITS.size();
-            const std::size_t                       PROTOCOL_CMD_LEN = 1;
-            const std::size_t                       PROTOCOL_EB_LEN = PROTOCOL_END_BITS.size();
-            const std::size_t                       PROTOCOL_PAYLOAD_LEN = PROTOCOL_LEN
-                                                                            - PROTOCOL_SB_LEN
-                                                                            - PROTOCOL_CMD_LEN
-                                                                            - PROTOCOL_EB_LEN; 
+            const std::size_t                           PROTOCOL_LEN = 57;                  // 串口协议长度
+            const std::vector<uint8_t>                  PROTOCOL_START_BITS = {0x69, 0X96}; // 起始位
+            const std::vector<uint8_t>                  PROTOCOL_END_BITS = {0x0D, 0x0A};   // 停止位
+            const std::size_t                           PROTOCOL_SB_LEN = PROTOCOL_START_BITS.size();
+            const std::size_t                           PROTOCOL_CMD_LEN = 1;
+            const std::size_t                           PROTOCOL_EB_LEN = PROTOCOL_END_BITS.size();
+            const std::size_t                           PROTOCOL_PAYLOAD_LEN =    PROTOCOL_LEN
+                                                                                - PROTOCOL_SB_LEN
+                                                                                - PROTOCOL_CMD_LEN
+                                                                                - PROTOCOL_EB_LEN; 
+            const std::string                           PROTOCOL_SEPARATOR    = "-";
+            const uint8_t                               PROTOCOL_SEPARATOR_CH = '-';
+            const std::string                           PROTOCOL_NULL         = "\x00";
+            const uint8_t                               PROTOCOL_NULL_CH      = '\x00';
+            const std::size_t                           PROTOCOL_SEP_LEN = PROTOCOL_SEPARATOR.size();
+            const std::size_t                           PROTOCOL_FILEID_LEN = 2;
+            const std::size_t                           PROTOCOL_TUNKID_LEN = 2;
+            const std::size_t                           PROTOCOL_ACTUAL_PAYLOAD_LEN = PROTOCOL_PAYLOAD_LEN
+                                                                                    - PROTOCOL_FILEID_LEN
+                                                                                    - PROTOCOL_TUNKID_LEN
+                                                                                    - PROTOCOL_SEP_LEN;
 
-            const int                               SERIAL_BAUDRATE = 115200;       // 波特率
-            const int                               SERIAL_MAXIMUM_RETRANS = 3;     // 最大重传次数
+            const int                                   SERIAL_BAUDRATE = 115200;       // 波特率
+            const int                                   SERVER_LISTEN_INTERVAL = 3000;  // 服务线程监听重传间隔, unit: ms
+            const int                                   MAXIMUM_WAIT_TIMES = 3000;      // 最大等待时间, unit: ms
+            const int                                   MAXIMUM_RETRANS_CNT = 3;        // 最大重传次数
+            const int                                   BLOCKING_TIMES = 3000;          // 阻塞等待时间, unit: ms
 
-            std::unique_ptr<ioc_type>               p_ioc;
-            std::string                             m_portname;
-            std::unique_ptr<serial_type>            p_serialport;
+            std::unique_ptr<ioc_type>                   p_ioc;
+            std::string                                 m_portname;
+            std::unique_ptr<serial_type>                p_serialport;
             // 服务器相关：接收文件
-            SafeQueue<ProtocolPackage>              s_rbuf;                         // 服务端接收到的协议包缓存
-            callback_type                           f_readable_cb;                  // 监听线程通知上层调用receive处理协议包的回调
-            const std::vector<std::size_t>          FILEID_RANGE = {0, 10};         // 服务端文件ID范围
-            SafeQueue<std::size_t>                  s_fileid_allocator;             // 服务端文件ID分配器
-            std::mutex                              s_file_management_lock;
-            std::map<std::size_t, FileDescription>  s_file_management;              // 服务器接收到的文件管理
+            SafeQueue<ProtocolPackage>                  s_rbuf;                         // 服务端接收到的协议包缓存
+            callback_type                               f_readable_cb;                  // 监听线程通知上层调用receive处理协议包的回调
+            const std::vector<std::size_t>              FILEID_RANGE = {0, 10};         // 服务端文件ID范围
+            SafeQueue<std::size_t>                      s_fileid_allocator;             // 服务端文件ID分配器
+            std::mutex                                  s_file_management_lock;
+            std::map<std::size_t, FileReceDescription>  s_file_management;              // 服务器接收到的文件管理
             // 客户端相关：发送文件
-            std::map<std::size_t, FileDescription>  c_file_management;              // 客户端发送的文件管理
-
-
+            std::mutex                                                      c_file_management_lock;
+            std::map<std::string, std::shared_ptr<FileTransferDescription>> c_file_management;      // 客户端发送的文件管理
     };
 }
