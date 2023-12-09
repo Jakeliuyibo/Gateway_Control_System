@@ -179,13 +179,186 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
     std::size_t trans_bytes = 0;
     bool ret = true;
 
-    /* 从缓存获取一条数据 */
-    ProtocolPackage package;
-    if (!s_rbuf.dequeue(package, false))
+    try
     {
-        log_error("SerialFTP({})缓存不存在可读数据", m_portname);
-        goto err_ret;
+        /* 获取文件ID */
+        std::size_t file_id;
+        if (!s_readable_fileid.dequeue(file_id, false))
+        {
+            throw std::runtime_error("不存在可读文件");
+        }
+
+        /* 获取文件描述符 */
+        std::unique_lock<std::mutex> _lock(s_file_management_lock);
+        if (s_file_management.find(file_id) == s_file_management.end())
+        {
+            throw std::runtime_error("不存在该文件ID");
+        }
+
+        /* 将数据写入文件 */
+        FileReceDescription &file_desc = s_file_management[file_id];
+        std::size_t rep_filename_pos = file_full_path.find(REP_FILENAME_SYMBOL);
+        if (rep_filename_pos == std::string::npos)
+        {
+            throw std::runtime_error("Can't find replace FILENAME symbol.");
+        }
+        file_full_path.replace(rep_filename_pos, REP_FILENAME_SYMBOL.size(), file_desc.file_name);
+        // 打开写入文件
+        std::ofstream ofs(file_full_path, std::ios::binary | std::ios::trunc);
+        if (!ofs.is_open())
+        {
+            throw std::runtime_error("File not existed.");
+        }
+        for(auto &it : file_desc.tunk_data)
+        {
+            ofs.write((it.second).c_str(), (it.second).size());
+        }
+
+        log_info("SerialFTP({})成功接收文件({})", m_portname, file_full_path);
+
+        /* 释放资源 */
+        ofs.flush();
+        ofs.close();
+        s_fileid_allocator.enqueue(file_id);
+        s_file_management.erase(file_id);
     }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFTP({})接收文件异常, msg = {}", m_portname, e.what());
+    }
+    
+
+err_ret:
+    return std::pair<bool, size_t>(ret, recv_bytes);
+}
+
+/**********************************************************************************
+ *************************    Sub Thread    ***************************************
+ **********************************************************************************/
+// 创建子线程监听客户端数据
+void SerialFileTransfer::_subthread_listen_client()
+{
+    try
+    {
+        std::vector<uint8_t> rbuf(PROTOCOL_LEN);
+        for(;;)
+        {
+            /* 阻塞读取数据 */
+            std::size_t recv_bytes = boost::asio::read(*p_serialport, boost::asio::buffer(rbuf.data(), PROTOCOL_LEN));
+
+            log_debug("SerialFTP({})接收到一包数据({})", m_portname, _convert_vecu8_to_hexstring(rbuf));
+
+            /* 校验 */
+            PROTOCOL_CMD cmd;
+            try
+            {
+                _check_protocol_frame(rbuf, cmd);
+            }
+            catch(const std::exception& e)
+            {
+                log_error("SerialFTP({})接收到一包错误数据({}), msg = {}", m_portname, _convert_vecu8_to_hexstring(rbuf), e.what());
+                continue;
+            }
+
+            /* 去除起始位和停止位 */
+            std::vector<uint8_t> payload(rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN, 
+                                         rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN + PROTOCOL_PAYLOAD_LEN);
+
+            /* 处理协议包 */
+            ProtocolPackage package(cmd, payload);
+            _handle_protocol_package(package);
+        }
+    }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFTP({})监听客户端连接出错, msg = {}", m_portname, e.what());
+    }
+}
+
+// 创建子线程监听服务器文件管理
+void SerialFileTransfer::_subthread_listen_manage_server_filedescription()
+{
+    try
+    {
+        for(;;)
+        {
+            {
+                std::unique_lock<std::mutex> lock(s_file_management_lock);
+                auto cur_time = std::chrono::system_clock::now();       // 当前时间
+                std::vector<std::size_t> to_delete_fileid;              // 重传超出次数需要删除的file_id
+                for(auto &it : s_file_management)
+                {
+                    auto &file_id   = it.first;
+                    auto &file_desc = it.second;
+                    auto &file_name = file_desc.file_name;
+                    auto &tunk_data = file_desc.tunk_data;
+                    if (   tunk_data.size() < file_desc.tunk_size 
+                        && std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - file_desc.recv_time).count() > MAXIMUM_WAIT_TIMES
+                        )
+                    {
+                        log_warning("SerialFTP({})检测到文件({}:{})接收超时", m_portname, file_id, file_name);
+
+                        /* 查找需要重传的数据块 */
+                        std::vector<std::size_t> retrans_tunk_id;
+                        for(std::size_t tunk_id = 0; tunk_id < file_desc.tunk_size; tunk_id++)
+                        {
+                            if (tunk_data.find(tunk_id) == tunk_data.end())
+                            {
+                                retrans_tunk_id.emplace_back(tunk_id);
+                            }
+                        }
+
+                        /* 发送重传数据包 */
+                        if (retrans_tunk_id.size() > 0)
+                        {
+                            std::string write_str = _id_format_transfomer(file_id) + PROTOCOL_SEPARATOR;
+                            for(auto idx = 0; idx < retrans_tunk_id.size(); idx++)
+                            {
+                                write_str += _id_format_transfomer(retrans_tunk_id[idx]);
+                                if (idx != (retrans_tunk_id.size() - 1))
+                                {
+                                    write_str += PROTOCOL_SEPARATOR;
+                                }
+                            }
+                            _write_bytes(CMD_RETRANS, write_str);
+                        }
+
+                        /* 记录重传次数 */
+                        file_desc.retrans_cnt++;
+                        if (file_desc.retrans_cnt > MAXIMUM_RETRANS_CNT)
+                        {
+                            to_delete_fileid.emplace_back(file_id);
+                            log_error("SerialFTP({})重传({}:{})超过最大次数", m_portname, file_id, file_name);
+                        }
+                    }
+                }
+
+                /* 删除超出重传次数的file id */
+                for(auto file_id : to_delete_fileid)
+                {
+                    s_fileid_allocator.enqueue(file_id);
+                    s_file_management.erase(file_id);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(SERVER_LISTEN_INTERVAL));
+        }
+    }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFTP({})监听服务器文件管理异常, msg = {}", m_portname, e.what());
+    }
+}
+
+/**********************************************************************************
+ *************************    Private    ******************************************
+ **********************************************************************************/
+// 处理协议数据包
+SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(ProtocolPackage &package)
+{
+    std::size_t recv_bytes = 0;
+    std::size_t trans_bytes = 0;
+    bool ret = true;
 
     /* 根据控制位处理数据 */
     if      (package.cmd == CMD_FILEINFO)   // ! 文件信息
@@ -302,32 +475,10 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
                 /* 发送ACK */
                 trans_bytes += SerialFileTransfer::_write_bytes(CMD_ACK, _id_format_transfomer(file_id));
 
-                /* 将数据写入文件 */
-                // 替换文件完整路径
-                std::size_t rep_filename_pos = file_full_path.find(REP_FILENAME_SYMBOL);
-                if (rep_filename_pos == std::string::npos)
-                {
-                    throw std::runtime_error("Can't find replace FILENAME symbol.");
-                }
-                file_full_path.replace(rep_filename_pos, REP_FILENAME_SYMBOL.size(), file_desc.file_name);
-                // 打开写入文件
-                std::ofstream ofs(file_full_path, std::ios::binary | std::ios::trunc);
-                if (!ofs.is_open())
-                {
-                    throw std::runtime_error("File not existed.");
-                }
-                for(auto &it : file_desc.tunk_data)
-                {
-                    ofs.write((it.second).c_str(), (it.second).size());
-                }
+                s_readable_fileid.enqueue(file_id);
 
-                log_info("SerialFTP({})成功接收文件({})", m_portname, file_full_path);
-
-                /* 释放资源 */
-                ofs.flush();
-                ofs.close();
-                s_fileid_allocator.enqueue(file_id);
-                s_file_management.erase(file_id);
+                /* 回调通知上层接口接收到完整文件 */
+                f_readable_cb();
             }
         }
         catch(const std::exception& e)
@@ -371,7 +522,6 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
     else if (package.cmd == CMD_RETRANS)    // ! 重传
     {
         /* 解析重传数据，获取file_id和需要重传的块数据 */
-        /* 解析ACK数据，获取file_id */
         std::size_t file_id;
         std::vector<std::size_t> retrans_tunk_id;
         try
@@ -407,131 +557,6 @@ err_ret:
     return std::pair<bool, size_t>(ret, recv_bytes);
 }
 
-/**********************************************************************************
- *************************    Sub Thread    ***************************************
- **********************************************************************************/
-// 创建子线程监听客户端数据
-void SerialFileTransfer::_subthread_listen_client()
-{
-    try
-    {
-        std::vector<uint8_t> rbuf(PROTOCOL_LEN);
-        for(;;)
-        {
-            /* 阻塞读取数据 */
-            std::size_t recv_bytes = boost::asio::read(*p_serialport, boost::asio::buffer(rbuf.data(), PROTOCOL_LEN));
-
-            log_debug("SerialFTP({})接收到一包数据({})", m_portname, _convert_vecu8_to_hexstring(rbuf));
-
-            /* 校验 */
-            PROTOCOL_CMD cmd;
-            try
-            {
-                _check_protocol_frame(rbuf, cmd);
-            }
-            catch(const std::exception& e)
-            {
-                log_error("SerialFTP({})接收到一包错误数据({}), msg = {}", m_portname, _convert_vecu8_to_hexstring(rbuf), e.what());
-                continue;
-            }
-
-            /* 去除起始位和停止位 */
-            std::vector<uint8_t> payload(rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN, 
-                                         rbuf.begin() + PROTOCOL_SB_LEN + PROTOCOL_CMD_LEN + PROTOCOL_PAYLOAD_LEN);
-
-            ProtocolPackage package(cmd, payload);
-
-            /* 将数据存入队列缓存 */
-            s_rbuf.enqueue(package);
-
-            /* 回调通知上层接口数据可读 */
-            f_readable_cb();
-        }
-    }
-    catch(const std::exception& e)
-    {
-        log_error("SerialFTP({})监听客户端连接出错, msg = {}", m_portname, e.what());
-    }
-}
-
-// 创建子线程监听服务器文件管理
-void SerialFileTransfer::_subthread_listen_manage_server_filedescription()
-{
-    try
-    {
-        for(;;)
-        {
-            {
-                std::unique_lock<std::mutex> lock(s_file_management_lock);
-                auto cur_time = std::chrono::system_clock::now();       // 当前时间
-                std::vector<std::size_t> to_delete_fileid;              // 重传超出次数需要删除的file_id
-                for(auto &it : s_file_management)
-                {
-                    auto &file_id   = it.first;
-                    auto &file_desc = it.second;
-                    auto &file_name = file_desc.file_name;
-                    auto &tunk_data = file_desc.tunk_data;
-                    if (   tunk_data.size() < file_desc.tunk_size 
-                        && std::chrono::duration_cast<std::chrono::milliseconds>(cur_time - file_desc.recv_time).count() > MAXIMUM_WAIT_TIMES
-                        )
-                    {
-                        log_warning("SerialFTP({})检测到文件({}:{})接收超时", m_portname, file_id, file_name);
-
-                        /* 查找需要重传的数据块 */
-                        std::vector<std::size_t> retrans_tunk_id;
-                        for(std::size_t tunk_id = 0; tunk_id < file_desc.tunk_size; tunk_id++)
-                        {
-                            if (tunk_data.find(tunk_id) == tunk_data.end())
-                            {
-                                retrans_tunk_id.emplace_back(tunk_id);
-                            }
-                        }
-
-                        /* 发送重传数据包 */
-                        if (retrans_tunk_id.size() > 0)
-                        {
-                            std::string write_str = _id_format_transfomer(file_id) + PROTOCOL_SEPARATOR;
-                            for(auto idx = 0; idx < retrans_tunk_id.size(); idx++)
-                            {
-                                write_str += _id_format_transfomer(retrans_tunk_id[idx]);
-                                if (idx != (retrans_tunk_id.size() - 1))
-                                {
-                                    write_str += PROTOCOL_SEPARATOR;
-                                }
-                            }
-                            _write_bytes(CMD_RETRANS, write_str);
-                        }
-
-                        /* 记录重传次数 */
-                        file_desc.retrans_cnt++;
-                        if (file_desc.retrans_cnt > MAXIMUM_RETRANS_CNT)
-                        {
-                            to_delete_fileid.emplace_back(file_id);
-                            log_error("SerialFTP({})重传({}:{})超过最大次数", m_portname, file_id, file_name);
-                        }
-                    }
-                }
-
-                /* 删除超出重传次数的file id */
-                for(auto file_id : to_delete_fileid)
-                {
-                    s_fileid_allocator.enqueue(file_id);
-                    s_file_management.erase(file_id);
-                }
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(SERVER_LISTEN_INTERVAL));
-        }
-    }
-    catch(const std::exception& e)
-    {
-        log_error("SerialFTP({})监听服务器文件管理异常, msg = {}", m_portname, e.what());
-    }
-}
-
-/**********************************************************************************
- *************************    Private    ******************************************
- **********************************************************************************/
 // 转化协议帧为十六进制字符串
 void SerialFileTransfer::_check_protocol_frame(std::vector<uint8_t> &frame, PROTOCOL_CMD &cmd)
 {

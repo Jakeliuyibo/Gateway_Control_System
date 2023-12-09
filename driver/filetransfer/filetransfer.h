@@ -210,6 +210,9 @@ namespace driver
             std::size_t _write_bytes(PROTOCOL_CMD cmd, std::string payload);
             // 将file_id/tunk_id转化为固定长度的字符串
             std::string _id_format_transfomer(std::size_t id);
+            // 处理协议数据包
+            ftret_type _handle_protocol_package(ProtocolPackage &package);
+
         private:
             // 公共
             const std::size_t                           PROTOCOL_LEN = 57;                  // 串口协议长度
@@ -244,7 +247,7 @@ namespace driver
             std::string                                 m_portname;
             std::unique_ptr<serial_type>                p_serialport;
             // 服务器相关：接收文件
-            SafeQueue<ProtocolPackage>                  s_rbuf;                         // 服务端接收到的协议包缓存
+            SafeQueue<std::size_t>                      s_readable_fileid;              // 服务端可读文件ID
             callback_type                               f_readable_cb;                  // 监听线程通知上层调用receive处理协议包的回调
             const std::vector<std::size_t>              FILEID_RANGE = {0, 10};         // 服务端文件ID范围
             SafeQueue<std::size_t>                      s_fileid_allocator;             // 服务端文件ID分配器
