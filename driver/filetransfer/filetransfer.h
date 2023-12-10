@@ -192,15 +192,11 @@ namespace driver
             std::string _convert_vecu8_to_hexstring(std::vector<uint8_t> &frame);
             // 校验协议帧
             void _check_protocol_frame(std::vector<uint8_t> &frame, PROTOCOL_CMD &cmd);
-            // 解析文件信息
-            void _parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size);
-            // 解析文件ID
-            void _parse_fileid_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_id);
-            // 解析块数据
+            // 解析数据包
+            void _parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size);
+            void _parse_fileid_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id);
             void _parse_tunkdata_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::size_t &tunk_id, std::string &tunk_data);
-            // 解析ACK数据
             void _parse_ack_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id);
-            // 解析重传数据
             void _parse_retrans_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::vector<std::size_t> &retrans_tunk_id);
             // 通过'-'\':'\'\x00'等符号分隔payload
             void _separate_payload_by_symbol(std::vector<uint8_t> &payload, std::vector<std::string> &parse, int &cnt_separator);
@@ -249,12 +245,12 @@ namespace driver
             // 服务器相关：接收文件
             SafeQueue<std::size_t>                      s_readable_fileid;              // 服务端可读文件ID
             callback_type                               f_readable_cb;                  // 监听线程通知上层调用receive处理协议包的回调
-            const std::vector<std::size_t>              FILEID_RANGE = {0, 10};         // 服务端文件ID范围
-            SafeQueue<std::size_t>                      s_fileid_allocator;             // 服务端文件ID分配器
             std::mutex                                  s_file_management_lock;
             std::map<std::size_t, FileReceDescription>  s_file_management;              // 服务器接收到的文件管理
             // 客户端相关：发送文件
+            const std::vector<std::size_t>              FILEID_RANGE = {0, 10};         // 客户端文件ID范围
+            SafeQueue<std::size_t>                      c_fileid_allocator;             // 客户端文件ID分配器
             std::mutex                                                      c_file_management_lock;
-            std::map<std::string, std::shared_ptr<FileTransferDescription>> c_file_management;      // 客户端发送的文件管理
+            std::map<std::size_t, std::shared_ptr<FileTransferDescription>> c_file_management;      // 客户端发送的文件管理
     };
 }

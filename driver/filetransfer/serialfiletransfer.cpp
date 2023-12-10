@@ -36,7 +36,7 @@ SerialFileTransfer::SerialFileTransfer(std::string port_name, const callback_typ
     /* 构建客户端请求文件ID分配器 */
     for(int idx = FILEID_RANGE[0]; idx < FILEID_RANGE[1]; idx++)
     {
-        s_fileid_allocator.enqueue(idx);
+        c_fileid_allocator.enqueue(idx);
     }
 
     /* 创建子线程监听客户端连接 */
@@ -59,19 +59,33 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     std::size_t recv_bytes = 0;             // 接收字节
     std::size_t trans_bytes = 0;            // 发送字节
     bool ret = true;                        // 发送成功
-
-    std::ifstream ifs;                      // 文件流
-
-    /* 创建文件转发描述符 */ 
-    {
-        std::unique_lock<std::mutex> lck(c_file_management_lock);
-        c_file_management[file_name] = std::make_shared<FileTransferDescription>();
-    }
     
-    FileTransferDescription *p_fd = c_file_management[file_name].get();
+    /* 分配文件ID并创建文件描述符 */
+    std::size_t file_id;
+    FileTransferDescription *p_fd;
+    try
+    {
+        if (!c_fileid_allocator.dequeue(file_id, false))
+        {
+            throw std::runtime_error("分配文件ID");
+        }
+
+        {
+            std::unique_lock<std::mutex> _fmk(c_file_management_lock);
+            c_file_management[file_id] = std::make_shared<FileTransferDescription>(file_name);
+            p_fd = c_file_management[file_id].get();
+        }
+    }
+    catch(const std::exception& e)
+    {
+        log_error("SerialFTP({})发送文件时创建描述符失败, msg = {}", m_portname, e.what());
+        return std::pair<bool, size_t>(ret, trans_bytes);
+    }
+
     std::unique_lock<std::mutex> lck(p_fd->block_lock);
 
     /* 读取文件信息并计算相关信息 */
+    std::ifstream ifs;
     try
     {
         ifs.open(file_full_path, std::ios::binary | std::ios::ate);
@@ -99,14 +113,16 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})获取文件{})失败, error msg = {}", m_portname, file_full_path, e.what());
-        goto err_ret;
+        goto err_realease;
     }
 
     /* 串口传输文件 */
     try
     {
         /* 1、传输文件信息：${cmd:1}${file_name}-${file_size}-${tunk_size} */
-        trans_bytes += _write_bytes(CMD_FILEINFO, file_name
+        trans_bytes += _write_bytes(CMD_FILEINFO, _id_format_transfomer(file_id)
+                                                + PROTOCOL_SEPARATOR
+                                                + file_name
                                                 + PROTOCOL_SEPARATOR
                                                 + std::to_string(p_fd->file_size)
                                                 + PROTOCOL_SEPARATOR
@@ -122,7 +138,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
         /* 3、传输块数据： ${cmd:3}${file_id}-${tunk_id}:${tunk_data} */
         for (auto tunk_id = 0; tunk_id < p_fd->tunk_data.size(); tunk_id++)
         {
-            trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(p_fd->file_id)
+            trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
                                                     + _id_format_transfomer(tunk_id)
                                                     + PROTOCOL_SEPARATOR
                                                     + p_fd->tunk_data[tunk_id]);
@@ -139,7 +155,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
         {
             for (auto tunk_id : p_fd->retrans_tunk_id)
             {
-                trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(p_fd->file_id)
+                trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
                                                         + _id_format_transfomer(tunk_id)
                                                         + PROTOCOL_SEPARATOR
                                                         + p_fd->tunk_data[tunk_id]);
@@ -160,16 +176,17 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})传输文件{})失败, error msg = {}", m_portname, file_full_path, e.what());
-        goto err_ret;
+        goto err_realease;
     }
 
-err_ret:
+err_realease:
     /* 释放资源 */
     {
         std::unique_lock<std::mutex> lck(c_file_management_lock);
-        c_file_management.erase(file_name);
+        c_file_management.erase(file_id);
     }
-    
+    c_fileid_allocator.enqueue(file_id);
+
     return std::pair<bool, size_t>(ret, trans_bytes);
 }
 
@@ -219,7 +236,6 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
         /* 释放资源 */
         ofs.flush();
         ofs.close();
-        s_fileid_allocator.enqueue(file_id);
         s_file_management.erase(file_id);
     }
     catch(const std::exception& e)
@@ -336,7 +352,6 @@ void SerialFileTransfer::_subthread_listen_manage_server_filedescription()
                 /* 删除超出重传次数的file id */
                 for(auto file_id : to_delete_fileid)
                 {
-                    s_fileid_allocator.enqueue(file_id);
                     s_file_management.erase(file_id);
                 }
             }
@@ -365,23 +380,15 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
     {
         /* 解析文件信息，获取file_name\file_size\tunk_size */
         std::string file_name;
-        std::size_t file_size, tunk_size;
+        std::size_t file_id, file_size, tunk_size;
         try
         {
-            _parse_fileinfo_from_payload(package.payload, file_name, file_size, tunk_size);
-            log_debug("SerialFTP({})接收到文件信息({}:{}:{})", m_portname, file_name, file_size, tunk_size);
+            _parse_fileinfo_from_payload(package.payload, file_id, file_name, file_size, tunk_size);
+            log_debug("SerialFTP({})接收到文件信息({}:{}:{}:{})", m_portname, file_id, file_name, file_size, tunk_size);
         }
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析FILEINFO的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
-        }
-
-        /* 分配文件ID */
-        std::size_t file_id;
-        if (!s_fileid_allocator.dequeue(file_id, false))
-        {
-            log_error("SerialFTP({})分配文件ID失败", m_portname);
             goto err_ret;
         }
 
@@ -391,18 +398,17 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
             s_file_management[file_id] = FileReceDescription(file_id, file_name, file_size, tunk_size);
         }
         
-        /* 向客户端发送文件ID */
-        trans_bytes += SerialFileTransfer::_write_bytes(CMD_FILEID, file_name + PROTOCOL_SEPARATOR + _id_format_transfomer(file_id));
+        /* 向客户端发送文件ID进行确认 */
+        trans_bytes += SerialFileTransfer::_write_bytes(CMD_FILEID, _id_format_transfomer(file_id));
     }
     else if (package.cmd == CMD_FILEID)     // ! 文件ID
     {
-        /* 解析文件ID，获取file_name\file_id */
-        std::string file_name;
+        /* 解析文件ID，获取file_id */
         std::size_t file_id;
         try
         {
-            _parse_fileid_from_payload(package.payload, file_name, file_id);
-            log_debug("SerialFTP({})接收到文件ID({}:{})", m_portname, file_id, file_name);
+            _parse_fileid_from_payload(package.payload, file_id);
+            log_debug("SerialFTP({})接收到文件ID({})", m_portname, file_id);
         }
         catch(const std::exception& e)
         {
@@ -413,17 +419,16 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         {
             std::unique_lock<std::mutex> lck(c_file_management_lock);
             /* 查找客户端阻塞条件管理器，置位变量 */ 
-            if (c_file_management.find(file_name) == c_file_management.end())
+            if (c_file_management.find(file_id) == c_file_management.end())
             {
                 log_error("SerialFTP({})接收到文件ID({})到未在客户端管理器中查询到条目", m_portname, file_id);
                 goto err_ret;
             }
 
             {
-                std::unique_lock<std::mutex> lck(c_file_management[file_name]->block_lock);
-                c_file_management[file_name]->file_id = file_id;
-                c_file_management[file_name]->flag_recv_fileid = true;
-                c_file_management[file_name]->block_cv.notify_all();
+                std::unique_lock<std::mutex> lck(c_file_management[file_id]->block_lock);
+                c_file_management[file_id]->flag_recv_fileid = true;
+                c_file_management[file_id]->block_cv.notify_all();
             }
         }
     }
@@ -483,7 +488,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         }
         catch(const std::exception& e)
         {
-            log_error("SerialFTP({})接收数据块({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            // log_error("SerialFTP({})接收数据块({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
             goto err_ret;
         }
     }
@@ -508,11 +513,11 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
 
             for (auto &it : c_file_management)
             {
-                if ((it.second)->file_id == file_id)
+                if (it.first == file_id)
                 {
-                    std::unique_lock<std::mutex> lck(c_file_management[it.first]->block_lock);
-                    c_file_management[it.first]->flag_recv_ack = true;
-                    c_file_management[it.first]->block_cv.notify_all();
+                    std::unique_lock<std::mutex> lck(c_file_management[file_id]->block_lock);
+                    c_file_management[file_id]->flag_recv_ack = true;
+                    c_file_management[file_id]->block_cv.notify_all();
                     break;
                 }
             }
@@ -537,16 +542,16 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
 
         /* 从客户端文件管理器中获取transfer线程阻塞的条件变量，通知其解锁 */
         {
-            std::unique_lock<std::mutex> lck(c_file_management_lock);
+            std::unique_lock<std::mutex> _fmk(c_file_management_lock);
 
             for (auto &it : c_file_management)
             {
-                if ((it.second)->file_id == file_id)
+                if (it.first == file_id)
                 {
-                    std::unique_lock<std::mutex> lck(c_file_management[it.first]->block_lock);
-                    c_file_management[it.first]->flag_recv_retrans = true;
-                    c_file_management[it.first]->retrans_tunk_id = retrans_tunk_id;
-                    c_file_management[it.first]->block_cv.notify_all();
+                    std::unique_lock<std::mutex> _bk(c_file_management[file_id]->block_lock);
+                    c_file_management[file_id]->flag_recv_retrans = true;
+                    c_file_management[file_id]->retrans_tunk_id = retrans_tunk_id;
+                    c_file_management[file_id]->block_cv.notify_all();
                     break;
                 }
             }
@@ -608,8 +613,8 @@ std::string SerialFileTransfer::_convert_vecu8_to_hexstring(std::vector<uint8_t>
     return ss.str();
 }
 
-// 解析文件信息,"${file_name}-${file_size}-${tunk_size}"
-void SerialFileTransfer::_parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size)
+// 解析文件信息,"${file_id}-${file_name}-${file_size}-${tunk_size}"
+void SerialFileTransfer::_parse_fileinfo_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id, std::string &file_name, std::size_t &file_size, std::size_t &tunk_size)
 {
     /* 解析字符串 */
     int cnt_separator = 0;
@@ -617,18 +622,19 @@ void SerialFileTransfer::_parse_fileinfo_from_payload(std::vector<uint8_t> &payl
     _separate_payload_by_symbol(payload, arr, cnt_separator);
 
     /* 检查格式是否规范 */
-    if ((arr.size() != 3) || (cnt_separator != 2))
+    if ((arr.size() != 4) || (cnt_separator != 3))
     {
         throw std::runtime_error("Error payload format.");
     }
 
-    file_name = arr[0];
-    file_size = std::stoull(arr[1]);
-    tunk_size = std::stoull(arr[2]);
+    file_id   = std::stoull(arr[0]);
+    file_name = arr[1];
+    file_size = std::stoull(arr[2]);
+    tunk_size = std::stoull(arr[3]);
 }
 
-// 解析文件ID,"${file_name}-${file_id}"
-void SerialFileTransfer::_parse_fileid_from_payload(std::vector<uint8_t> &payload, std::string &file_name, std::size_t &file_id)
+// 解析文件ID,"${file_id}"
+void SerialFileTransfer::_parse_fileid_from_payload(std::vector<uint8_t> &payload, std::size_t &file_id)
 {
     /* 解析字符串 */
     int cnt_separator = 0;               // 折号出现次数
@@ -636,17 +642,16 @@ void SerialFileTransfer::_parse_fileid_from_payload(std::vector<uint8_t> &payloa
     _separate_payload_by_symbol(payload, arr, cnt_separator);
 
     /* 检查格式是否规范 */
-    if ((arr.size() != 2) || (cnt_separator != 1))
+    if ((arr.size() != 1) || (cnt_separator != 0))
     {
         throw std::runtime_error("Error payload format.");
     }
 
-    file_name = arr[0];
-    if (arr[1].size() != PROTOCOL_FILEID_LEN)
+    if (arr[0].size() != PROTOCOL_FILEID_LEN)
     {
         throw std::runtime_error("Error file id length.");
     }
-    file_id = std::stoull(arr[1]);
+    file_id = std::stoull(arr[0]);
 }
 
 // 解析块数据，"${file_id}${tunk_id}-${tunk_data}"
