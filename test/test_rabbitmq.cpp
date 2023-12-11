@@ -12,6 +12,9 @@ using namespace std;
 using namespace utility;
 using namespace reactor;
 
+SafeMap<int, int> smp;
+
+
 int main()
 {
     /* 初始化日志模块           */
@@ -24,32 +27,8 @@ int main()
     bool parserFlag = true;
     parserFlag = config.load("../config/defconfig.ini");
 
-    SafeMap<int, int> smp;
-    cout << "empty ? = " << smp.empty() << endl;
     cout << smp[1] << endl;
-    cout << smp[2] << endl;
-    smp.set(1, 1);
-    smp.set(2, 2);
-    cout << smp[1] << endl;
-    cout << smp[2] << endl;
 
-    cout << "insert ? = " << smp.insert(3, 3) << endl;
-    cout << "find ? = " << smp.find(1) << endl;
-    cout << "size ?= " << smp.size() << endl;
-    cout << "erase ? = " << smp.erase(2) << endl;
-    cout << "find ? = " << smp.find(2) << endl;
-    cout << "size ?= " << smp.size() << endl;
-    cout << "empty ? = " << smp.empty() << endl;
-    cout << "erase ? = " << smp.erase(4) << endl;
-
-    // int &p = smp[3];
-    // p = 4;
-    // cout << smp[3] << endl;
-    cout << "遍历" << endl;
-    for(auto it : smp)
-    {
-        cout << "key = " << it.first << ", value = " << it.second << endl;
-    }
 
     /* 注销日志模块             */
     log_critical("program end ...");

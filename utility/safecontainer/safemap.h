@@ -16,7 +16,7 @@ namespace utility
             SafeMap & operator = (const SafeMap &other) = delete;
             ~SafeMap() {}
 
-            // 重载括号访问
+            // 重载括号值访问（引用访问容易造成线程不安全）
             V operator [] (const K& key)
             {
                 std::shared_lock<std::shared_mutex> _lck(m_lk);
@@ -61,31 +61,15 @@ namespace utility
                 return m_mp.empty();
             }
 
-
-            // 迭代器操作
+            // 迭代器操作，可能造成线程不安全，因此删除
             typedef typename std::map<K, V>::iterator Iterator;
-            Iterator begin()
-            {
-                std::shared_lock<std::shared_mutex> _lck(m_lk);
-                return m_mp.begin();
-            }
-            Iterator end()
-            {
-                std::shared_lock<std::shared_mutex> _lck(m_lk);
-                return m_mp.end();
-            }
-            Iterator rbegin()
-            {
-                std::shared_lock<std::shared_mutex> _lck(m_lk);
-                return m_mp.rbegin();
-            }
-            Iterator rend()
-            {
-                std::shared_lock<std::shared_mutex> _lck(m_lk);
-                return m_mp.rend();
-            }
+            Iterator begin() = delete;
+            Iterator end() = delete;
+            Iterator rbegin() = delete;
+            Iterator rend() = delete;
         private:
             std::shared_mutex m_lk; // 读写锁
             std::map<K, V> m_mp;
     };
+
 }
