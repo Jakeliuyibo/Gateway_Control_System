@@ -10,5 +10,4 @@ include_directories(
 
 # 生成静态库
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(safequeue SHARED safequeue.cpp)
-add_library(rwqueue   SHARED rwqueue.cpp)
+add_library(safecontainer SHARED ${SRC})

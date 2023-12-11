@@ -6,30 +6,11 @@
 #include "logger.h"
 #include "configparser.h"
 #include "source.h"
+#include "safemap.h"
 
 using namespace std;
 using namespace utility;
 using namespace reactor;
-
-void produce(Source &source)
-{
-    int idx = 1;
-    for(;;)
-    {
-        string msg = "hello" + to_string(idx++);
-        source.push(msg);
-        this_thread::sleep_for(chrono::milliseconds(10));
-    }
-}
-
-void consume(Source &source)
-{
-    for(;;)
-    {
-        string msg = source.pop();
-        this_thread::sleep_for(chrono::milliseconds(10));
-    }
-}
 
 int main()
 {
@@ -43,13 +24,21 @@ int main()
     bool parserFlag = true;
     parserFlag = config.load("../config/defconfig.ini");
 
-    /* 初始化Reactor架构        */
-    Source source(&config);
+    SafeMap<int, int> smp;
+    cout << "empty ? = " << smp.empty() << endl;
+    smp[1] = 1;
+    smp[2] = 2;
+    cout << "insert ? = " << smp.insert(3, 3) << endl;
+    cout << "find ? = " << smp.find(1) << endl;
+    cout << "size ?= " << smp.size() << endl;
+    cout << "erase ? = " << smp.erase(2) << endl;
+    cout << "find ? = " << smp.find(2) << endl;
+    cout << "size ?= " << smp.size() << endl;
+    cout << "empty ? = " << smp.empty() << endl;
 
-    std::thread th1(produce, std::ref(source));
-    std::thread th2(consume, std::ref(source));
-    th1.join();
-    th2.join();
+    int &p = smp[3];
+    p = 4;
+    cout << smp[3] << endl;
 
     /* 注销日志模块             */
     log_critical("program end ...");

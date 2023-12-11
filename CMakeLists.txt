@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(Middleware_development)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 # 工程目录
 set(PROJECT_DIR ${PROJECT_SOURCE_DIR})
@@ -17,7 +17,7 @@ set(HEADPATH
 	${PROJECT_DIR}/utility/singleton
     ${PROJECT_DIR}/utility/configparser
 	${PROJECT_DIR}/utility/systime
-	${PROJECT_DIR}/utility/safequeue
+	${PROJECT_DIR}/utility/safecontainer
     ${PROJECT_DIR}/utility/logger
     ${PROJECT_DIR}/utility/rabbitmqclient
 	${PROJECT_DIR}/utility/threadpool
