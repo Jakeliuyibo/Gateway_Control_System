@@ -11,5 +11,5 @@ set(EXECUTABLE_OUTPUT_PATH ${EXECPATH})
 add_executable(test_reactor test_reactor.cpp)
 target_link_libraries(test_reactor systime logger configparser reactor event filetransfer)
 
-add_executable(test_rabbitmq test_rabbitmq.cpp)
-target_link_libraries(test_rabbitmq systime logger configparser source reactor event safecontainer)
+add_executable(exec_management exec_management.cpp)
+target_link_libraries(exec_management systime logger configparser)
