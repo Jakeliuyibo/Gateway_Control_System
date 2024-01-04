@@ -1,2 +1,2 @@
 # 添加子目录
-add_subdirectory(amqpcpp)
+# add_subdirectory(amqpcpp)
