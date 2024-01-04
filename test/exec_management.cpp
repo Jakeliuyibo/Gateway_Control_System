@@ -2,7 +2,7 @@
  * @Author       : liuyibo
  * @Date         : 2023-12-22 07:05:38
  * @LastEditors  : liuyibo 1299502716@qq.com
- * @LastEditTime : 2023-12-22 09:45:43
+ * @LastEditTime : 2024-01-03 12:49:06
  * @FilePath     : /Gateway_Control_System/test/exec_management.cpp
  * @Description  : 程序执行管理，负责基础服务及应用软件的创建、关闭和维护
  */
@@ -21,13 +21,12 @@
 using namespace std;
 using namespace utility;
 
-
 int main()
 {
     /* 初始化日志模块           */
     Logger::instance()->init("../logs/EM.log", Logger::STREAM_BOTH, Logger::MODE_SYNC, 
                                               Logger::LEVEL_DEBUG, Logger::LEVEL_INFO, Logger::LEVEL_DEBUG);
-    log_critical("program start ...");
+    log_critical("Exec Management Program Start ...");
 
     /* 初始化基础服务 */
     std::vector<std::string> basic_service = {"./init_rabbitmqserver.sh", "./init_virtualserial.sh"};
@@ -46,7 +45,7 @@ int main()
 
     /* 加载用户应用 */
     // 创建应用
-    std::vector<std::string> user_app = {"./test_reactor"};
+    std::vector<std::string> user_app = {"./device_control", "./pressure_test"};
     std::map<pid_t, std::string> pid_list;
     for(auto &script : user_app)
     {
@@ -79,7 +78,7 @@ int main()
         }
         else
         {
-            log_warning("守护进程收到异常关闭的子进程({})，稍后进行重启", pid);
+            log_warning("守护进程收到异常关闭的子进程({},{})，稍后进行重启", pid, pid_list[pid]);
             
             /* 查询子进程列表 */
             auto iter = pid_list.find(pid);
@@ -115,7 +114,7 @@ int main()
     }
 
     /* 注销日志模块             */
-    log_critical("program end ...");
+    log_critical("Exec Management Program End ...");
     Logger::instance()->deinit();
 
     return 0;

@@ -39,7 +39,7 @@ void Reactor::init(IniConfigParser *config)
 void Reactor::push(DeviceEvent event)
 {
     std::string event_msg = event.serial();
-    p_source->push(event_msg);
+    p_source->push_in(event_msg);
 }
 
 void Reactor::listen()
@@ -52,7 +52,7 @@ void Reactor::listen()
             for(;;)
             {
                 // 从事件源读取事件
-                std::string event_msg = p_source->pop();
+                std::string event_msg = p_source->pop_in();
 
                 // 包装成事件
                 DeviceEvent event;
