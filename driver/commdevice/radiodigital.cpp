@@ -28,7 +28,7 @@ bool RadiodigitalCommDev::handleEvent(DeviceEvent event)
     switch(event.m_type)
     {
         case DeviceEvent::EVENT_INIT:            /* 创建文件传输对象 */
-            log_info("电台数传设备初始化");
+            log_info("电台数传设备({})初始化", m_devid);
             p_filetransfer = new TcpFileTransfer(
                 m_serverport,
                 [this] ()
@@ -39,21 +39,21 @@ bool RadiodigitalCommDev::handleEvent(DeviceEvent event)
                 m_targetip, m_targetport);
             break;
         case DeviceEvent::EVENT_WRITE:            /* 传输文件       */
-            log_debug("电台数传设备传输文件");
+            log_debug("电台数传设备({})传输文件", m_devid);
             p_filetransfer->transfer(event.m_action);
             break;
         case DeviceEvent::EVENT_READ:            /* 读取文件        */
-            log_debug("电台数传设备读取文件");
+            log_debug("电台数传设备({})读取文件", m_devid);
             p_filetransfer->receive(m_storagepath, m_storageextentprefix, getSystimeByFilenameFormat());
             break;
         case DeviceEvent::EVENT_CLOSE:          /* 关闭文件传输对象  */
-            log_info("电台数传设备关闭传输");
+            log_info("电台数传设备({})关闭传输", m_devid);
             close();
             break;
         case DeviceEvent::EVENT_READYREAD:
         case DeviceEvent::EVENT_OTHER:
         default:
-            log_error("电台数传设备收到未知事件, event = {}", event.EventTypeMapping[event.m_type]);
+            log_error("电台数传设备({})收到未知事件, event = {}", m_devid, event.EventTypeMapping[event.m_type]);
             break;
     }
     return true;

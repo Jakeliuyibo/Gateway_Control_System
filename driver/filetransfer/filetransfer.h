@@ -212,7 +212,7 @@ namespace driver
         private:
             // 公共
             const std::size_t                           PROTOCOL_LEN = 57;                  // 串口协议长度
-            const std::vector<uint8_t>                  PROTOCOL_START_BITS = {0x69, 0X96}; // 起始位
+            const std::vector<uint8_t>                  PROTOCOL_START_BITS = {0x69, 0x96}; // 起始位
             const std::vector<uint8_t>                  PROTOCOL_END_BITS = {0x0D, 0x0A};   // 停止位
             const std::size_t                           PROTOCOL_SB_LEN = PROTOCOL_START_BITS.size();
             const std::size_t                           PROTOCOL_CMD_LEN = 1;

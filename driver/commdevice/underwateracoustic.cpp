@@ -26,7 +26,7 @@ bool UnderwaterAcousticCommDev::handleEvent(DeviceEvent event)
     switch(event.m_type)
     {
         case DeviceEvent::EVENT_INIT:            /* 创建文件传输对象 */
-            log_info("水声通信设备初始化");
+            log_info("水声通信设备({})初始化", m_devid);
             p_filetransfer = new SerialFileTransfer(
                 m_serialport,
                 [this] ()
@@ -36,21 +36,21 @@ bool UnderwaterAcousticCommDev::handleEvent(DeviceEvent event)
                 });
             break;
         case DeviceEvent::EVENT_WRITE:            /* 传输文件       */
-            log_debug("水声通信设备接收到任务：传输文件({})", event.m_action);
+            log_debug("水声通信设备({})接收到任务：传输文件({})", m_devid, event.m_action);
             p_filetransfer->transfer(event.m_action);
             break;
         case DeviceEvent::EVENT_READ:            /* 读取文件        */
-            log_debug("水声通信设备接收到任务:接收文件");
+            log_debug("水声通信设备({})接收到任务:接收文件", m_devid);
             p_filetransfer->receive(m_storagepath, m_storageextentprefix, getSystimeByFilenameFormat());
             break;
         case DeviceEvent::EVENT_CLOSE:          /* 关闭文件传输对象  */
-            log_info("水声通信设备关闭传输");
+            log_info("水声通信设备({})关闭传输", m_devid);
             close();
             break;
         case DeviceEvent::EVENT_READYREAD:
         case DeviceEvent::EVENT_OTHER:
         default:
-            log_error("水声通信设备收到未知事件, event = {}", event.EventTypeMapping[event.m_type]);
+            log_error("水声通信设备({})收到未知事件, event = {}", m_devid, event.EventTypeMapping[event.m_type]);
             break;
     }
     return true;
