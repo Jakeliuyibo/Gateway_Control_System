@@ -31,6 +31,6 @@ namespace reactor
         private:
             std::unique_ptr<Source> p_source;
             std::unique_ptr<Processor> p_processor;
-            std::map<std::string, std::unique_ptr<CommDevice>> m_devicelist;
+            std::map<int, std::unique_ptr<CommDevice>> m_devicelist;
     };
 }

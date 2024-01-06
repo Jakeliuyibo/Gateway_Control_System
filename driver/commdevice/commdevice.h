@@ -4,6 +4,7 @@
 #include <memory>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
+#include <atomic>
 #include "systime.h"
 #include "logger.h"
 #include "configparser.h"
@@ -21,8 +22,9 @@ namespace driver
             using callback_type = std::function<void(DeviceEvent event)>;
 
         public:
-            virtual bool handleEvent(DeviceEvent event) = 0;
+            CommDevice() : f_open(false) {}
             virtual ~CommDevice() = default;
+            virtual bool handleEvent(DeviceEvent event) = 0;
             void close()
             {
                 if (p_filetransfer)
@@ -30,11 +32,17 @@ namespace driver
                     /* 释放资源 */
                     delete p_filetransfer;
                     p_filetransfer = nullptr;
+
+                    f_open = false;
                 }
             }
             void bindReadableEvent2Source(const callback_type &func)
             {
                 f_serverreable_cb = func;
+            }
+            bool is_open()
+            {
+                return f_open.load();
             }
         public:
             int             m_devid;
@@ -43,6 +51,8 @@ namespace driver
             std::string     m_storageextentprefix;
             FileTransfer   *p_filetransfer;
             callback_type   f_serverreable_cb;
+
+            std::atomic<bool>   f_open;
     };
 
     /**
@@ -51,7 +61,7 @@ namespace driver
     class OpticalfiberCommDev : public CommDevice
     {
         public:
-            OpticalfiberCommDev(IniConfigParser *config);
+            OpticalfiberCommDev(IniConfigParser *config, std::string config_item);
             ~OpticalfiberCommDev();
             bool handleEvent(DeviceEvent event);
         private:
@@ -66,7 +76,7 @@ namespace driver
     class RadiodigitalCommDev : public CommDevice
     {
         public:
-            RadiodigitalCommDev(IniConfigParser *config);
+            RadiodigitalCommDev(IniConfigParser *config, std::string config_item);
             ~RadiodigitalCommDev();
             bool handleEvent(DeviceEvent event);
         private:
@@ -81,7 +91,7 @@ namespace driver
     class UnderwaterAcousticCommDev : public CommDevice
     {
         public:
-            UnderwaterAcousticCommDev(IniConfigParser *config);
+            UnderwaterAcousticCommDev(IniConfigParser *config, std::string config_item);
             ~UnderwaterAcousticCommDev();
             bool handleEvent(DeviceEvent event);
         private:
@@ -94,7 +104,7 @@ namespace driver
     class SatelliteCommDev : public CommDevice
     {
         public:
-            SatelliteCommDev(IniConfigParser *config);
+            SatelliteCommDev(IniConfigParser *config, std::string config_item);
             ~SatelliteCommDev();
             bool handleEvent(DeviceEvent event);
         private:

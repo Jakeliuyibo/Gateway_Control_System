@@ -17,10 +17,14 @@ void Reactor::init(IniConfigParser *config)
 
     /* 初始化设备列表 */
     // 初始化
-    m_devicelist.emplace("opticalfiber"      , std::make_unique<OpticalfiberCommDev>(config));      // 光纤通信设备
-    m_devicelist.emplace("radiodigital"      , std::make_unique<RadiodigitalCommDev>(config));      // 电台数传设备
-    m_devicelist.emplace("underwateracoustic", std::make_unique<UnderwaterAcousticCommDev>(config));// 水声通信设备
-    m_devicelist.emplace("satellite"         , std::make_unique<SatelliteCommDev>(config));         // 卫星通信设备
+    m_devicelist.emplace(1 , std::make_unique<OpticalfiberCommDev>(config, "OPTICALFIBER101"));            // 光纤通信设备
+    m_devicelist.emplace(2 , std::make_unique<RadiodigitalCommDev>(config, "RADIODIGITAL206"));            // 电台数传设备
+    m_devicelist.emplace(3 , std::make_unique<UnderwaterAcousticCommDev>(config, "UNDERWATERACOUSTIC20")); // 水声通信设备
+    m_devicelist.emplace(4 , std::make_unique<SatelliteCommDev>(config, "SATELLITE2"));                    // 卫星通信设备
+    m_devicelist.emplace(5 , std::make_unique<OpticalfiberCommDev>(config, "OPTICALFIBER100"));            // 光纤通信设备
+    m_devicelist.emplace(6 , std::make_unique<RadiodigitalCommDev>(config, "RADIODIGITAL205"));            // 电台数传设备
+    m_devicelist.emplace(7 , std::make_unique<UnderwaterAcousticCommDev>(config, "UNDERWATERACOUSTIC10")); // 水声通信设备
+    m_devicelist.emplace(8 , std::make_unique<SatelliteCommDev>(config, "SATELLITE1"));                    // 卫星通信设备
     
     // 绑定可读事件源
     auto func = [this] (DeviceEvent event) {
@@ -64,14 +68,22 @@ void Reactor::listen()
 
                 // 将事件添加到处理池
                 auto fut = p_processor->submit(
-                    [this] (DeviceEvent event)
+                    [this] (DeviceEvent event) -> bool
                     {
-                        log_debug("线程池接收到事件{},设备{}处理{}动作{}", 
-                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action);
-                        m_devicelist[event.m_device]->handleEvent(event);
+                        log_debug("线程池接收到任务{},设备{},类型{},动作{},状态{},其他{}", 
+                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action, event.m_status, event.m_other);
+                        return m_devicelist[event.m_device]->handleEvent(event);
                     },
                     event
                 );
+
+                // 处理执行结果并反馈给管理应用
+                if (fut.get()) {
+                    event.modify_status("success");
+                } else {
+                    event.modify_status("fail");
+                }
+                p_source->push_out(event.serial());
             }
         }
     );

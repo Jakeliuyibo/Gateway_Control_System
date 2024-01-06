@@ -1,4 +1,5 @@
 #include "event.h"
+#include <iostream>
 
 using namespace reactor;
 
@@ -45,16 +46,21 @@ void Event::deserial(std::string ser)
  *
  *************************************************************************/
 // 构造
-DeviceEvent::DeviceEvent(int id, EventType type, std::string device, std::string action)
+DeviceEvent::DeviceEvent(int id, EventType type, int device, std::string action, 
+            std::string status, std::string other)
     :   m_id(id),
         m_type(type),
         m_device(device),
-        m_action(action) 
+        m_action(action),
+        m_status(status),
+        m_other(other)
 {
     modify_id(m_id);
     modify_type(m_type);
     modify_device(m_device);
     modify_action(m_action);
+    modify_status(m_status);
+    modify_other(m_other);
 }
 
 bool DeviceEvent::parse(const std::string &ser)
@@ -62,7 +68,10 @@ bool DeviceEvent::parse(const std::string &ser)
     if(     ser.find("id")      == std::string::npos
         ||  ser.find("type")    == std::string::npos
         ||  ser.find("device")  == std::string::npos
-        ||  ser.find("action")  == std::string::npos)
+        ||  ser.find("action")  == std::string::npos
+        ||  ser.find("status")  == std::string::npos
+        ||  ser.find("other")   == std::string::npos
+        )
     {
         log_error("Can't detect sybmol from event msg: {}", ser);
         return false;
@@ -70,8 +79,6 @@ bool DeviceEvent::parse(const std::string &ser)
 
     deserial(ser);
     m_id     = std::stoi(get("id"));
-    m_device = get("device");
-    m_action = get("action");
     std::string type_desc = get("type");
     for(auto &it : EventTypeMapping)
     {
@@ -81,23 +88,36 @@ bool DeviceEvent::parse(const std::string &ser)
             break;
         }
     }
+    m_device = std::stoi(get("device"));
+    m_action = get("action");
+    m_status = get("status");
+    m_other  = get("other");
+
     return true;
 }
 
 // 修改
-void DeviceEvent::modify_id(int new_id)
+void DeviceEvent::modify_id(int desc)
 {
-    add("id"    , std::to_string(new_id));
+    add("id"    , std::to_string(desc));
 }
-void DeviceEvent::modify_type(EventType new_type)
+void DeviceEvent::modify_type(EventType desc)
 {
-    add("type"  , EventTypeMapping[new_type]);
+    add("type"  , EventTypeMapping[desc]);
 }
-void DeviceEvent::modify_device(std::string new_device)
+void DeviceEvent::modify_device(int desc)
 {
-    add("device", new_device);
+    add("device", std::to_string(desc));
 }
-void DeviceEvent::modify_action(std::string new_action)
+void DeviceEvent::modify_action(std::string desc)
 {
-    add("action", new_action);
+    add("action", desc);
+}
+void DeviceEvent::modify_status(std::string desc)
+{
+    add("status", desc);
+}
+void DeviceEvent::modify_other(std::string desc)
+{
+    add("other", desc);
 }

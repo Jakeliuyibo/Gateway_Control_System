@@ -41,30 +41,30 @@ int main()
     sleep(1);
 
     /* 初始化设备 */
-    DeviceEvent o1(1, DeviceEvent::EVENT_INIT , "opticalfiber", "");
-    DeviceEvent r1(1, DeviceEvent::EVENT_INIT , "radiodigital", "");
-    DeviceEvent u1(1, DeviceEvent::EVENT_INIT , "underwateracoustic", "");
-    DeviceEvent s1(1, DeviceEvent::EVENT_INIT , "satellite", "");
+    DeviceEvent o1(1, DeviceEvent::EVENT_OPEN , 1, "", "", "");
+    DeviceEvent r1(1, DeviceEvent::EVENT_OPEN , 2, "", "", "");
+    DeviceEvent u1(1, DeviceEvent::EVENT_OPEN , 3, "", "", "");
+    DeviceEvent s1(1, DeviceEvent::EVENT_OPEN , 4, "", "", "");
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o1.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r1.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u1.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s1.serial());
     sleep(1);
 
-    DeviceEvent o2(2, DeviceEvent::EVENT_WRITE, "opticalfiber", "/root/Gateway_Control_System/storage/test1.txt");
-    DeviceEvent r2(2, DeviceEvent::EVENT_WRITE, "radiodigital", "/root/Gateway_Control_System/storage/test2.txt");
+    DeviceEvent o2(2, DeviceEvent::EVENT_WRITE, 1, "/root/Gateway_Control_System/storage/test1.txt", "", "");
+    DeviceEvent r2(2, DeviceEvent::EVENT_WRITE, 2, "/root/Gateway_Control_System/storage/test2.txt", "", "");
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o2.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r2.serial());
     sleep(1);
 
-    DeviceEvent u2(2, DeviceEvent::EVENT_WRITE, "underwateracoustic", "/root/Gateway_Control_System/storage/test1.txt");
-    DeviceEvent u3(3, DeviceEvent::EVENT_WRITE, "underwateracoustic", "/root/Gateway_Control_System/storage/test2.txt");
-    DeviceEvent u4(4, DeviceEvent::EVENT_WRITE, "underwateracoustic", "/root/Gateway_Control_System/storage/test3.txt");
-    DeviceEvent u5(5, DeviceEvent::EVENT_WRITE, "underwateracoustic", "/root/Gateway_Control_System/storage/test4.txt");
-    DeviceEvent s2(2, DeviceEvent::EVENT_WRITE, "satellite"         , "/root/Gateway_Control_System/storage/test1.txt");
-    DeviceEvent s3(3, DeviceEvent::EVENT_WRITE, "satellite"         , "/root/Gateway_Control_System/storage/test2.txt");
-    DeviceEvent s4(4, DeviceEvent::EVENT_WRITE, "satellite"         , "/root/Gateway_Control_System/storage/test3.txt");
-    DeviceEvent s5(5, DeviceEvent::EVENT_WRITE, "satellite"         , "/root/Gateway_Control_System/storage/test4.txt");
+    DeviceEvent u2(2, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test1.txt", "", "");
+    DeviceEvent u3(3, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test2.txt", "", "");
+    DeviceEvent u4(4, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test3.txt", "", "");
+    DeviceEvent u5(5, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test4.txt", "", "");
+    DeviceEvent s2(2, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test1.txt", "", "");
+    DeviceEvent s3(3, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test2.txt", "", "");
+    DeviceEvent s4(4, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test3.txt", "", "");
+    DeviceEvent s5(5, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test4.txt", "", "");
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u2.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u3.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u4.serial());
@@ -75,10 +75,10 @@ int main()
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s5.serial());
     sleep(10);
 
-    DeviceEvent o9(9, DeviceEvent::EVENT_CLOSE , "opticalfiber", "");
-    DeviceEvent r9(9, DeviceEvent::EVENT_CLOSE , "radiodigital", "");
-    DeviceEvent u9(9, DeviceEvent::EVENT_CLOSE , "underwateracoustic", "");
-    DeviceEvent s9(9, DeviceEvent::EVENT_CLOSE , "satellite", "");
+    DeviceEvent o9(9, DeviceEvent::EVENT_CLOSE , 1, "", "", "");
+    DeviceEvent r9(9, DeviceEvent::EVENT_CLOSE , 2, "", "", "");
+    DeviceEvent u9(9, DeviceEvent::EVENT_CLOSE , 3, "", "", "");
+    DeviceEvent s9(9, DeviceEvent::EVENT_CLOSE , 4, "", "", "");
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o9.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r9.serial());
     p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u9.serial());
