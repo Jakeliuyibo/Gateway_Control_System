@@ -17,8 +17,8 @@ using namespace utility;
 namespace driver
 {
     /**
-     * @description: 文件传输类，外部接口使用transfer(file_full_path="/root/test.txt")传输文件
-     *                                 使用receive(file_full_path="/root/recv_{FILENAME}_2023_12_31{.EXTENT}")来接收文件
+     * @description: 文件传输类，外部接口使用transfer(file_full_path="/home/test.txt")传输文件
+     *                                 使用receive(file_full_path="/home/recv_{FILENAME}_2023_12_31{.EXTENT}")来接收文件
      */
     class FileTransfer
     {

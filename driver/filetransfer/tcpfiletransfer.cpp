@@ -28,10 +28,11 @@ TcpFileTransfer::TcpFileTransfer(port_type server_port, const callback_type &ser
                     sock_type client_sk(*p_ioc);
                     p_server_acceptor->accept(client_sk);
                     auto remote_ip = client_sk.remote_endpoint().address().to_string();
+                    auto remote_port = client_sk.remote_endpoint().port();
 
                     /* 多线程处理 */
                     m_client_request.enqueue(std::move(client_sk));
-                    log_info("TcpFileTransfer({})接收到客户端({})连接", m_server_port, remote_ip);
+                    log_info("TcpFileTransfer({})接收到客户端({}:{})连接", m_server_port, remote_ip, remote_port);
 
                     /* 回调通知上层模块数据可读 */
                     f_readable_cb();
@@ -68,6 +69,8 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
         {
             throw std::runtime_error("Connect server failed.");
         }
+
+        log_info("TcpFileTransfer({})成功连接至目标服务器({}:{})", m_server_port, m_target_ip, m_target_port);
 
         /* 等待服务器响应 */
         std::vector<char> rbuf(3, '0');

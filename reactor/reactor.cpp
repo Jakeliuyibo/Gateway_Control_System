@@ -68,22 +68,22 @@ void Reactor::listen()
 
                 // 将事件添加到处理池
                 auto fut = p_processor->submit(
-                    [this] (DeviceEvent event) -> bool
+                    [this] (DeviceEvent event)
                     {
                         log_debug("线程池接收到任务{},设备{},类型{},动作{},状态{},其他{}", 
                                 event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action, event.m_status, event.m_other);
-                        return m_devicelist[event.m_device]->handleEvent(event);
+                        
+                        // 执行并反馈结果
+                        bool sub_result = m_devicelist[event.m_device]->handleEvent(event);
+                        if (sub_result) {
+                            event.modify_status("success");
+                        } else {
+                            event.modify_status("fail");
+                        }
+                        p_source->push_out(event.serial());
                     },
                     event
                 );
-
-                // 处理执行结果并反馈给管理应用
-                if (fut.get()) {
-                    event.modify_status("success");
-                } else {
-                    event.modify_status("fail");
-                }
-                p_source->push_out(event.serial());
             }
         }
     );

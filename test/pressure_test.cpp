@@ -41,49 +41,59 @@ int main()
     sleep(1);
 
     /* 初始化设备 */
-    DeviceEvent o1(1, DeviceEvent::EVENT_OPEN , 1, "", "", "");
-    DeviceEvent r1(1, DeviceEvent::EVENT_OPEN , 2, "", "", "");
-    DeviceEvent u1(1, DeviceEvent::EVENT_OPEN , 3, "", "", "");
-    DeviceEvent s1(1, DeviceEvent::EVENT_OPEN , 4, "", "", "");
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o1.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r1.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u1.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s1.serial());
+    DeviceEvent o101_1(1, DeviceEvent::EVENT_OPEN , 1, "", "", "");
+    DeviceEvent o100_1(1, DeviceEvent::EVENT_OPEN , 5, "", "", "");
+    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o101_1.serial());
+    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o100_1.serial());
+    // DeviceEvent r1(1, DeviceEvent::EVENT_OPEN , 2, "", "", "");
+    // DeviceEvent u1(1, DeviceEvent::EVENT_OPEN , 3, "", "", "");
+    // DeviceEvent s1(1, DeviceEvent::EVENT_OPEN , 4, "", "", "");
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o1.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r1.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u1.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s1.serial());
     sleep(1);
 
-    DeviceEvent o2(2, DeviceEvent::EVENT_WRITE, 1, "/root/Gateway_Control_System/storage/test1.txt", "", "");
-    DeviceEvent r2(2, DeviceEvent::EVENT_WRITE, 2, "/root/Gateway_Control_System/storage/test2.txt", "", "");
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o2.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r2.serial());
-    sleep(1);
+    // DeviceEvent o2(2, DeviceEvent::EVENT_WRITE, 1, "/home/Gateway_Management_System/storage/upload/test.txt", "", "");
+    // DeviceEvent r2(2, DeviceEvent::EVENT_WRITE, 2, "/home/Gateway_Management_System/storage/upload//test1.txt", "", "");
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o2.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r2.serial());
+    DeviceEvent o101_2(2, DeviceEvent::EVENT_WRITE, 1, "/home/Gateway_Management_System/storage/upload/test.txt", "", "");
+    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o101_2.serial());
+    sleep(3);
 
-    DeviceEvent u2(2, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test1.txt", "", "");
-    DeviceEvent u3(3, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test2.txt", "", "");
-    DeviceEvent u4(4, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test3.txt", "", "");
-    DeviceEvent u5(5, DeviceEvent::EVENT_WRITE, 3, "/root/Gateway_Control_System/storage/test4.txt", "", "");
-    DeviceEvent s2(2, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test1.txt", "", "");
-    DeviceEvent s3(3, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test2.txt", "", "");
-    DeviceEvent s4(4, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test3.txt", "", "");
-    DeviceEvent s5(5, DeviceEvent::EVENT_WRITE, 4, "/root/Gateway_Control_System/storage/test4.txt", "", "");
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u2.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u3.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u4.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u5.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s2.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s3.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s4.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s5.serial());
-    sleep(10);
+    // DeviceEvent u2(2, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test1.txt", "", "");
+    // DeviceEvent u3(3, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test2.txt", "", "");
+    // DeviceEvent u4(4, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test3.txt", "", "");
+    // DeviceEvent u5(5, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test4.txt", "", "");
+    // DeviceEvent s2(2, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test1.txt", "", "");
+    // DeviceEvent s3(3, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test2.txt", "", "");
+    // DeviceEvent s4(4, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test3.txt", "", "");
+    // DeviceEvent s5(5, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test4.txt", "", "");
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u2.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u3.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u4.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u5.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s2.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s3.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s4.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s5.serial());
+    // sleep(10);
 
-    DeviceEvent o9(9, DeviceEvent::EVENT_CLOSE , 1, "", "", "");
-    DeviceEvent r9(9, DeviceEvent::EVENT_CLOSE , 2, "", "", "");
-    DeviceEvent u9(9, DeviceEvent::EVENT_CLOSE , 3, "", "", "");
-    DeviceEvent s9(9, DeviceEvent::EVENT_CLOSE , 4, "", "", "");
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o9.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r9.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u9.serial());
-    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s9.serial());
+    // DeviceEvent o9(9, DeviceEvent::EVENT_CLOSE , 1, "", "", "");
+    // DeviceEvent r9(9, DeviceEvent::EVENT_CLOSE , 2, "", "", "");
+    // DeviceEvent u9(9, DeviceEvent::EVENT_CLOSE , 3, "", "", "");
+    // DeviceEvent s9(9, DeviceEvent::EVENT_CLOSE , 4, "", "", "");
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o9.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, r9.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, u9.serial());
+    // p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, s9.serial());
+    DeviceEvent o101_9(9, DeviceEvent::EVENT_CLOSE , 1, "", "", "");
+    DeviceEvent o100_9(9, DeviceEvent::EVENT_CLOSE , 5, "", "", "");
+    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o101_9.serial());
+    p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, o100_9.serial());
 
+    
     sleep(1000);
 
     /* 注销日志模块             */

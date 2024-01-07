@@ -41,7 +41,7 @@ bool OpticalfiberCommDev::handleEvent(DeviceEvent event)
                 m_serverport,
                 [this] ()
                 {
-                    DeviceEvent event(1, DeviceEvent::EVENT_READYREAD, m_devid, "", "", "");
+                    DeviceEvent event(0, DeviceEvent::EVENT_READYREAD, m_devid, "", "", "");
                     f_serverreable_cb(event);
                 }, 
                 m_targetip, m_targetport);
@@ -57,7 +57,7 @@ bool OpticalfiberCommDev::handleEvent(DeviceEvent event)
                 break;
             }
 
-            log_debug("光纤通信设备({})传输文件", m_devid);
+            log_info("光纤通信设备({})传输文件", m_devid);
             ret = (p_filetransfer->transfer(event.m_action)).first;
             break;
 
@@ -69,7 +69,7 @@ bool OpticalfiberCommDev::handleEvent(DeviceEvent event)
                 break;
             }
 
-            log_debug("光纤通信设备({})读取文件", m_devid);
+            log_info("光纤通信设备({})读取文件", m_devid);
             ret = (p_filetransfer->receive(m_storagepath, m_storageextentprefix, getSystimeByFilenameFormat())).first;
             break;
 

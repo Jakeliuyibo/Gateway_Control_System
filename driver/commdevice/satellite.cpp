@@ -39,7 +39,7 @@ bool SatelliteCommDev::handleEvent(DeviceEvent event)
                 m_serialport,
                 [this] ()
                 {
-                    DeviceEvent event(1, DeviceEvent::EVENT_READYREAD, m_devid, "", "", "");
+                    DeviceEvent event(0, DeviceEvent::EVENT_READYREAD, m_devid, "", "", "");
                     f_serverreable_cb(event);
                 });
             

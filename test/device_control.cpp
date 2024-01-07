@@ -19,7 +19,7 @@ int main()
 {
     /* 初始化日志模块           */
     Logger::instance()->init("../logs/C.log", Logger::STREAM_BOTH, Logger::MODE_SYNC, 
-                                              Logger::LEVEL_DEBUG, Logger::LEVEL_INFO, Logger::LEVEL_DEBUG);
+                                              Logger::LEVEL_DEBUG, Logger::LEVEL_DEBUG, Logger::LEVEL_DEBUG);
     log_critical("Device Control Program Start ...");
 
     /* 初始化配置模块           */

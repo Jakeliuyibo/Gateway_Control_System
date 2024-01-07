@@ -30,14 +30,17 @@
 * 构建镜像
   
   ```
-  root& docker build -f docker/Dockerfile -t ubuntu_cpp:v1 .
+  root& docker build -f docker/Dockerfile -t ubuntu_cpp:v2 .
   ```
 
 * 启动容器
   
   ```
-  root& docker run -it -P -d --network bridge -v [${PROJECT_DIR}]:/root/Gateway_Control_System --name control-env ubuntu_cpp:v1
+  root& docker run -it -P -d --network bridge -v [${PROJECT_DIR}]:/home/Gateway_Control_System --name control-env ubuntu_cpp:v2
+
+  for example: root& docker run -it -P -d --network bridge -v Y:\Studyplace_Web_Development\Gateway_Control_System:/home/Gateway_Control_System -v Y:\Studyplace_Web_Development\Gateway_Management_System:/home/Gateway_Management_System --name gateway-env ubuntu_cpp:v2
   ```
+
 
 * 配置完成，通过vscode附加到运行的容器环境
 
