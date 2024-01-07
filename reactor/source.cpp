@@ -29,25 +29,28 @@ Source::Source(IniConfigParser *parser)
     }
 
     {
-        std::unique_lock<std::mutex> wlock(m_wlock);
-        std::unique_lock<std::mutex> rlock(m_rlock);
+        std::unique_lock<std::mutex> wlock_in(m_wlock_in);
+        std::unique_lock<std::mutex> rlock_in(m_rlock_in);
+        std::unique_lock<std::mutex> wlock_out(m_wlock_out);
 
-        /* 初始化RabbitMq Client模块 */
-        p_rabbitmqclient = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
+        /* 初始化RabbitMq消息服务的入队列模块 */
+        p_rabbitmqclient_in = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
         CExchange ex_in(m_exchangename_in, "direct");
-        CExchange ex_out(m_exchangename_out, "direct");
         CQueue qu_in(m_queuename_in);
+        p_rabbitmqclient_in->connect();
+        p_rabbitmqclient_in->declareExchange(ex_in);
+        p_rabbitmqclient_in->declareQueue(qu_in);
+        p_rabbitmqclient_in->bindQueueToExchange(m_queuename_in, m_exchangename_in, m_routingkey_in);
+        p_rabbitmqclient_in->consume_listen(m_queuename_in);
+
+        /* 初始化RabbitMq消息服务的出队列模块 */
+        p_rabbitmqclient_out = std::make_unique<RabbitMqClient>(rabbitmq_hostname, rabbitmq_port, rabbitmq_user, rabbitmq_password);
+        CExchange ex_out(m_exchangename_out, "direct");
         CQueue qu_out(m_queuename_out);
-
-        p_rabbitmqclient->connect();
-        p_rabbitmqclient->declareExchange(ex_in);
-        p_rabbitmqclient->declareQueue(qu_in);
-        p_rabbitmqclient->bindQueueToExchange(m_queuename_in, m_exchangename_in, m_routingkey_in);
-        p_rabbitmqclient->declareExchange(ex_out);
-        p_rabbitmqclient->declareQueue(qu_out);
-        p_rabbitmqclient->bindQueueToExchange(m_queuename_out, m_exchangename_out, m_routingkey_out);
-
-        p_rabbitmqclient->consume_listen(m_queuename_in);
+        p_rabbitmqclient_out->connect();
+        p_rabbitmqclient_out->declareExchange(ex_out);
+        p_rabbitmqclient_out->declareQueue(qu_out);
+        p_rabbitmqclient_out->bindQueueToExchange(m_queuename_out, m_exchangename_out, m_routingkey_out);
     }
 }
 
@@ -62,8 +65,8 @@ void Source::push_in(std::string msg)
     CMessage message(msg);
 
     {
-        std::unique_lock<std::mutex> rlock(m_rlock);
-        p_rabbitmqclient->publish(m_exchangename_in, m_routingkey_in, message);
+        std::unique_lock<std::mutex> wlock(m_wlock_in);
+        p_rabbitmqclient_in->publish(m_exchangename_in, m_routingkey_in, message);
     }
 
     log_trace("事件源存入RabbitMq IN队列消息{}", msg);
@@ -74,8 +77,8 @@ void Source::push_out(std::string msg)
     CMessage message(msg);
 
     {
-        std::unique_lock<std::mutex> rlock(m_rlock);
-        p_rabbitmqclient->publish(m_exchangename_out, m_routingkey_out, message);
+        std::unique_lock<std::mutex> wlock(m_wlock_out);
+        p_rabbitmqclient_out->publish(m_exchangename_out, m_routingkey_out, message);
     }
 
     log_trace("事件源存入RabbitMq OUT队列消息{}", msg);
@@ -87,9 +90,9 @@ std::string Source::pop_in()
     std::string msg;
 
     {
-        std::unique_lock<std::mutex> wlock(m_wlock);
+        std::unique_lock<std::mutex> rlock(m_rlock_in);
         // msg = p_rabbitmqclient->get(m_queuename_in, true);
-        p_rabbitmqclient->consume(msg, true);
+        p_rabbitmqclient_in->consume(msg, true);
     }
 
     log_trace("事件源从RabbitMq IN队列取出消息{}", msg);

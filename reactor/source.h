@@ -24,11 +24,15 @@ namespace reactor
             // 事件出队
             std::string pop_in();
         private:
-            std::unique_ptr<RabbitMqClient> p_rabbitmqclient;
-            std::mutex  m_wlock, m_rlock;
+            // 入队列相关
+            std::unique_ptr<RabbitMqClient> p_rabbitmqclient_in;
+            std::mutex  m_wlock_in, m_rlock_in;
             std::string m_exchangename_in;
             std::string m_queuename_in;
             std::string m_routingkey_in;
+            // 出队列相关
+            std::unique_ptr<RabbitMqClient> p_rabbitmqclient_out;
+            std::mutex  m_wlock_out;
             std::string m_exchangename_out;
             std::string m_queuename_out;
             std::string m_routingkey_out;
