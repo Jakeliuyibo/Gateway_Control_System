@@ -20,6 +20,7 @@
 
 ## 配置apache服务器
 * 配置/etc/apache2/apache2.conf文件
+    ServerName localhost:80
 * 配置/etc/apache2/sites-available/000-default.conf文件，绑定wsgi接口
     <VirtualHost *:80>
 

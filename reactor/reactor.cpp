@@ -70,17 +70,33 @@ void Reactor::listen()
                 auto fut = p_processor->submit(
                     [this] (DeviceEvent event)
                     {
-                        log_debug("线程池接收到任务{},设备{},类型{},动作{},状态{},其他{}", 
-                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action, event.m_status, event.m_other);
+                        log_info("线程池接收到任务{},设备{},类型{},动作{},状态{}", 
+                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action, event.m_status);
                         
                         // 执行并反馈结果
-                        bool sub_result = m_devicelist[event.m_device]->handleEvent(event);
-                        if (sub_result) {
+                        auto result = m_devicelist[event.m_device]->handleEvent(event);
+                        if (result.status) {
                             event.modify_status("success");
                         } else {
                             event.modify_status("fail");
                         }
+                        if (event.m_type == DeviceEvent::EVENT_READ) {
+                            event.modify_action(result.file_name);
+                        }
+                        Event other_obj;
+                        other_obj.add("sched_time", result.sched_time);
+                        other_obj.add("sched_finish_time", result.sched_finish_time);
+                        other_obj.add("trans_bytes", std::to_string(result.trans_bytes));
+                        other_obj.add("recv_bytes", std::to_string(result.recv_bytes));
+                        other_obj.add("file_full_path", result.file_full_path);
+                        other_obj.add("file_path", result.file_path);
+                        other_obj.add("file_name", result.file_name);
+                        other_obj.add("file_size", std::to_string(result.file_size));
+                        event.modify_other(other_obj.serial());
                         p_source->push_out(event.serial());
+
+                        log_info("线程池处理完成任务{},设备{},类型{},动作{},状态{}", 
+                                event.m_id, event.m_device, event.EventTypeMapping[event.m_type], event.m_action, event.m_status);
                     },
                     event
                 );

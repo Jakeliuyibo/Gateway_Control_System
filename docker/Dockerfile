@@ -2,6 +2,9 @@ FROM ubuntu:22.04
 
 EXPOSE 22 80 1234 5672 6379 7100 7101 7205 7206 8080 8800 8801 15672 19999
 
+ENV TZ=Asia/Shanghai
+ENV TimeZone=Asia/Shanghai
+
 # 安装基本工具
 RUN    rm /etc/apt/sources.list                                                                                                           \
     && echo deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse           >> /etc/apt/sources.list  \
@@ -19,7 +22,8 @@ RUN    rm /etc/apt/sources.list                                                 
     && apt-get install -y build-essential                                                                                                 \
     && apt-get install -y gdb git cmake                                                                                                   \                                                                                         
     && apt-get install -y libssl-dev                                                                                                      \
-    && apt-get install -y bsdmainutils                                                                                                          
+    && apt-get install -y bsdmainutils                                                                                                    \                                                                                           
+    && apt-get install -y ntp                                                                                                          
 
 # 安装c++第三方库
 RUN    apt-get install -y libspdlog-dev                                              \
@@ -40,7 +44,8 @@ RUN    apt-get install -y python3-dev python3-pip apache2 libapache2-mod-wsgi-py
     && pip install pyserial==3.5                                                     \ 
     && pip install SQLAlchemy==1.4.22                                                \  
     && pip install redis                                                             \     
-    && pip install markupsafe==1.1.1                                                                                                               
+    && pip install markupsafe==1.1.1                                                 \
+    && pip install requests                                                                  
 
 # 安装rabbitmq-server环境(TODO 开启自启动服务)
 RUN    service rabbitmq-server start                                                 \

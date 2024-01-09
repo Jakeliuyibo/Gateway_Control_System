@@ -56,10 +56,11 @@ SerialFileTransfer::~SerialFileTransfer()
 
 SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name)
 {
-    std::size_t recv_bytes = 0;             // 接收字节
-    std::size_t trans_bytes = 0;            // 发送字节
-    bool ret = true;                        // 发送成功
-    
+    ftret_type ret(true);
+    ret.file_full_path = file_full_path;
+    ret.file_path = file_path;
+    ret.file_name = file_name;
+
     /* 分配文件ID并创建文件描述符 */
     std::size_t file_id;
     FileTransferDescription *p_fd;
@@ -79,7 +80,8 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})发送文件时创建描述符失败, msg = {}", m_portname, e.what());
-        return std::pair<bool, size_t>(ret, trans_bytes);
+        ret.status = false;
+        return ret;
     }
 
     std::unique_lock<std::mutex> lck(p_fd->block_lock);
@@ -91,6 +93,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
         ifs.open(file_full_path, std::ios::binary | std::ios::ate);
         p_fd->file_size = ifs.tellg();
         p_fd->tunk_size = static_cast<std::size_t>(std::ceil(static_cast<double>(p_fd->file_size) / PROTOCOL_ACTUAL_PAYLOAD_LEN));
+        ret.file_size = p_fd->file_size;
         ifs.seekg(0, std::ios::beg);
 
         /* 读取文件加载到内存中 */
@@ -113,6 +116,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})获取文件{})失败, error msg = {}", m_portname, file_full_path, e.what());
+        ret.status = false;
         goto err_realease;
     }
 
@@ -120,7 +124,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     try
     {
         /* 1、传输文件信息：${cmd:1}${file_name}-${file_size}-${tunk_size} */
-        trans_bytes += _write_bytes(CMD_FILEINFO, _id_format_transfomer(file_id)
+        ret.trans_bytes += _write_bytes(CMD_FILEINFO, _id_format_transfomer(file_id)
                                                 + PROTOCOL_SEPARATOR
                                                 + file_name
                                                 + PROTOCOL_SEPARATOR
@@ -138,7 +142,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
         /* 3、传输块数据： ${cmd:3}${file_id}-${tunk_id}:${tunk_data} */
         for (auto tunk_id = 0; tunk_id < p_fd->tunk_data.size(); tunk_id++)
         {
-            trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
+            ret.trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
                                                     + _id_format_transfomer(tunk_id)
                                                     + PROTOCOL_SEPARATOR
                                                     + p_fd->tunk_data[tunk_id]);
@@ -155,7 +159,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
         {
             for (auto tunk_id : p_fd->retrans_tunk_id)
             {
-                trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
+                ret.trans_bytes += _write_bytes(CMD_TUNKDATA, _id_format_transfomer(file_id)
                                                         + _id_format_transfomer(tunk_id)
                                                         + PROTOCOL_SEPARATOR
                                                         + p_fd->tunk_data[tunk_id]);
@@ -176,6 +180,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::transfer(cstr_type file_full_
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})传输文件{})失败, error msg = {}", m_portname, file_full_path, e.what());
+        ret.status = false;
         goto err_realease;
     }
 
@@ -187,15 +192,14 @@ err_realease:
     }
     c_fileid_allocator.enqueue(file_id);
 
-    return std::pair<bool, size_t>(ret, trans_bytes);
+    return ret;
 }
 
-SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_path)
+SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_path, cstr_type file_path)
 {
-    std::size_t recv_bytes = 0;
-    std::size_t trans_bytes = 0;
-    bool ret = true;
-
+    ftret_type ret(true);
+    ret.file_path = file_path;
+    
     try
     {
         /* 获取文件ID */
@@ -220,6 +224,11 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
             throw std::runtime_error("Can't find replace FILENAME symbol.");
         }
         file_full_path.replace(rep_filename_pos, REP_FILENAME_SYMBOL.size(), file_desc.file_name);
+        ret.file_full_path = file_full_path;
+        ret.file_name = file_desc.file_name;
+        ret.file_size = file_desc.file_size;
+        ret.recv_bytes = file_desc.file_size;
+
         // 打开写入文件
         std::ofstream ofs(file_full_path, std::ios::binary | std::ios::trunc);
         if (!ofs.is_open())
@@ -241,11 +250,11 @@ SerialFileTransfer::ftret_type SerialFileTransfer::receive(str_type file_full_pa
     catch(const std::exception& e)
     {
         log_error("SerialFTP({})接收文件异常, msg = {}", m_portname, e.what());
+        ret.status = false;
     }
     
-
 err_ret:
-    return std::pair<bool, size_t>(ret, recv_bytes);
+    return ret;
 }
 
 /**********************************************************************************
@@ -262,7 +271,7 @@ void SerialFileTransfer::_subthread_listen_client()
             /* 阻塞读取数据 */
             std::size_t recv_bytes = boost::asio::read(*p_serialport, boost::asio::buffer(rbuf.data(), PROTOCOL_LEN));
 
-            log_debug("SerialFTP({})接收到一包数据({})", m_portname, _convert_vecu8_to_hexstring(rbuf));
+            log_trace("SerialFTP({})接收到一包数据({})", m_portname, _convert_vecu8_to_hexstring(rbuf));
 
             /* 校验 */
             PROTOCOL_CMD cmd;
@@ -369,12 +378,8 @@ void SerialFileTransfer::_subthread_listen_manage_server_filedescription()
  *************************    Private    ******************************************
  **********************************************************************************/
 // 处理协议数据包
-SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(ProtocolPackage &package)
+void SerialFileTransfer::_handle_protocol_package(ProtocolPackage &package)
 {
-    std::size_t recv_bytes = 0;
-    std::size_t trans_bytes = 0;
-    bool ret = true;
-
     /* 根据控制位处理数据 */
     if      (package.cmd == CMD_FILEINFO)   // ! 文件信息
     {
@@ -389,7 +394,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析FILEINFO的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            return;
         }
 
         /* 创建文件描述符并加入文件管理 */
@@ -399,7 +404,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         }
         
         /* 向客户端发送文件ID进行确认 */
-        trans_bytes += SerialFileTransfer::_write_bytes(CMD_FILEID, _id_format_transfomer(file_id));
+        SerialFileTransfer::_write_bytes(CMD_FILEID, _id_format_transfomer(file_id));
     }
     else if (package.cmd == CMD_FILEID)     // ! 文件ID
     {
@@ -413,7 +418,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析FILEID的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            return;
         }
 
         {
@@ -422,7 +427,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
             if (c_file_management.find(file_id) == c_file_management.end())
             {
                 log_error("SerialFTP({})接收到文件ID({})到未在客户端管理器中查询到条目", m_portname, file_id);
-                goto err_ret;
+                return;
             }
 
             {
@@ -445,7 +450,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析CMD_TUNKDATA的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            return;
         }
 
         /* 检测文件id是否存在以及tunk_id是否已存在或超出tunk_size */
@@ -478,7 +483,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
             if (tunk_mp.size() == file_desc.tunk_size)
             {
                 /* 发送ACK */
-                trans_bytes += SerialFileTransfer::_write_bytes(CMD_ACK, _id_format_transfomer(file_id));
+                SerialFileTransfer::_write_bytes(CMD_ACK, _id_format_transfomer(file_id));
 
                 s_readable_fileid.enqueue(file_id);
 
@@ -488,8 +493,8 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         }
         catch(const std::exception& e)
         {
-            // log_error("SerialFTP({})接收数据块({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            log_error("SerialFTP({})接收数据块({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
+            return;
         }
     }
     else if (package.cmd == CMD_ACK)        // ! ack数据
@@ -504,7 +509,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析ACK的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            return;
         }
 
         /* 从客户端文件管理器中获取transfer线程阻塞的条件变量，通知其解锁 */
@@ -537,7 +542,7 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
         catch(const std::exception& e)
         {
             log_error("SerialFTP({})解析RETRANS的Payload({})出错, msg = {}", m_portname, _convert_vecu8_to_hexstring(package.payload), e.what());
-            goto err_ret;
+            return;
         }
 
         /* 从客户端文件管理器中获取transfer线程阻塞的条件变量，通知其解锁 */
@@ -557,9 +562,6 @@ SerialFileTransfer::ftret_type SerialFileTransfer::_handle_protocol_package(Prot
             }
         }
     }
-
-err_ret:
-    return std::pair<bool, size_t>(ret, recv_bytes);
 }
 
 // 转化协议帧为十六进制字符串

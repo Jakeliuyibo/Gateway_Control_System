@@ -54,9 +54,10 @@ TcpFileTransfer::~TcpFileTransfer()
 
 TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name)
 {
-    std::size_t recv_bytes = 0;
-    std::size_t trans_bytes = 0;
-    bool ret = true;
+    ftret_type ret(true);
+    ret.file_full_path = file_full_path;
+    ret.file_path = file_path;
+    ret.file_name = file_name;
 
     try
     {
@@ -67,15 +68,15 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
         sk.connect(ep, ec);
         if (ec)
         {
-            throw std::runtime_error("Connect server failed.");
+            throw std::runtime_error("连接服务器失败");
         }
 
-        log_info("TcpFileTransfer({})成功连接至目标服务器({}:{})", m_server_port, m_target_ip, m_target_port);
+        log_debug("TcpFileTransfer({})成功连接至目标服务器({}:{})", m_server_port, m_target_ip, m_target_port);
 
         /* 等待服务器响应 */
         std::vector<char> rbuf(3, '0');
-        recv_bytes += boost::asio::read(sk, boost::asio::buffer(rbuf.data(), 3));
-        if (recv_bytes != TCP_TRANS_SYNC_SYMBOL.size() 
+        ret.recv_bytes += boost::asio::read(sk, boost::asio::buffer(rbuf.data(), 3));
+        if (ret.recv_bytes != TCP_TRANS_SYNC_SYMBOL.size() 
             || rbuf[0] != TCP_TRANS_SYNC_SYMBOL[0] 
             || rbuf[1] != TCP_TRANS_SYNC_SYMBOL[1]  
             || rbuf[2] != TCP_TRANS_SYNC_SYMBOL[2])
@@ -86,11 +87,12 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
         /* 打开文件并获取文件大小 */
         std::ifstream ifs(file_full_path, std::ios::binary | std::ios::ate);
         auto file_size = ifs.tellg();
+        ret.file_size = file_size;
         ifs.seekg(0, std::ios::beg);
 
         /* 发送文件名+文件大小 */
         std::string header = file_name + "-" + std::to_string(file_size) + ":";
-        trans_bytes += boost::asio::write(sk, boost::asio::buffer(header));
+        ret.trans_bytes += boost::asio::write(sk, boost::asio::buffer(header));
 
         /* 发送文件内容 */
         std::vector<char> wbuf(TCP_TRANS_TUNK_SIZE);
@@ -99,7 +101,7 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
         {
             std::size_t bytes_to_write = std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE);
             ifs.read(wbuf.data(), bytes_to_write);
-            trans_bytes += boost::asio::write(sk, boost::asio::buffer(wbuf.data(), bytes_to_write));
+            ret.trans_bytes += boost::asio::write(sk, boost::asio::buffer(wbuf.data(), bytes_to_write));
             remaining_bytes -= bytes_to_write;
         }
 
@@ -111,31 +113,31 @@ TcpFileTransfer::ftret_type TcpFileTransfer::transfer(cstr_type file_full_path, 
     catch(const std::exception& e)
     {
         log_error("TcpFileTransfer向({}:{})传输文件file({})失败, error msg = {}", m_target_ip, m_target_port, file_full_path, e.what());
-        ret = false;
+        ret.status = false;
     }
 
-    return ftret_type(ret, trans_bytes);
+    return ret;
 }
 
-TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
+TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path, cstr_type file_path)
 {
-    std::size_t recv_bytes = 0;
-    std::size_t trans_bytes = 0;
-    bool ret = true;
+    ftret_type ret(true);
+    ret.file_path = file_path;
 
     /* 获取客户端 */
     sock_type client_sock(*p_ioc);
     if (!m_client_request.dequeue(client_sock))
     {
         log_error("TcpFileTransfer({})获取客户端请求失败", m_server_port);
-        return ftret_type(false, 0);
+        ret.status = false;
+        return ret;
     }
 
     try
     {
         /* 向客户端发出"ok!"同步标志开启文件接收 */
-        trans_bytes += boost::asio::write(client_sock, boost::asio::buffer(TCP_TRANS_SYNC_SYMBOL));
-        if (trans_bytes != TCP_TRANS_SYNC_SYMBOL.size()) 
+        ret.trans_bytes += boost::asio::write(client_sock, boost::asio::buffer(TCP_TRANS_SYNC_SYMBOL));
+        if (ret.trans_bytes != TCP_TRANS_SYNC_SYMBOL.size()) 
         {
             throw std::runtime_error("Trans sync error.");
         }
@@ -147,7 +149,7 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
         {
             std::string header = "";
             while (1) {
-                recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), 1));
+                ret.recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), 1));
                 if (rbuf[0] == '-') {
                     file_name = header;
                     header = "";
@@ -167,6 +169,9 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
             throw std::runtime_error("Can't find replace FILENAME symbol.");
         }
         file_full_path.replace(rep_filename_pos, REP_FILENAME_SYMBOL.size(), file_name);
+        ret.file_full_path = file_full_path;
+        ret.file_name = file_name;
+        ret.file_size = file_size;
 
         /* 接收文件内容并写入存储路径下文件 */
         // 打开写入文件
@@ -182,7 +187,7 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
         while (remaining_bytes > 0)
         {
             std::size_t bytes_to_read = std::min(remaining_bytes, TCP_TRANS_TUNK_SIZE);
-            recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), bytes_to_read));
+            ret.recv_bytes += boost::asio::read(client_sock, boost::asio::buffer(rbuf.data(), bytes_to_read));
             ofs.write(rbuf.data(), bytes_to_read);
             remaining_bytes -= bytes_to_read;
         }
@@ -194,10 +199,10 @@ TcpFileTransfer::ftret_type TcpFileTransfer::receive(str_type file_full_path)
     catch(const std::exception& e)
     {
         log_error("TcpFileTransfer({})接收文件({})失败, error msg = {}", m_server_port, file_full_path, e.what());
-        ret = false;
+        ret.status = false;
     }
 
     /* 释放资源 */
     client_sock.close();
-    return ftret_type(ret, recv_bytes);
+    return ret;
 }

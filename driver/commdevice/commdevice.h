@@ -2,6 +2,8 @@
 
 #include <string>
 #include <memory>
+#include <thread>
+#include <chrono>
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <atomic>
@@ -21,29 +23,39 @@ namespace driver
         public:
             using callback_type = std::function<void(DeviceEvent event)>;
 
+            struct HandleEventRetType 
+            {
+                bool status;                    // 执行状态
+                std::string sched_time;         // 调度时间
+                std::string sched_finish_time;  // 调度完成时间
+                std::size_t trans_bytes;        // 发送字节
+                std::size_t recv_bytes;         // 接收字节
+                std::string file_full_path;     // 文件完整路径
+                std::string file_path;          // 文件路径
+                std::string file_name;          // 文件名
+                std::size_t file_size;          // 文件大小
+
+                HandleEventRetType(bool st) : 
+                    status(st), 
+                    sched_time(""), sched_finish_time(""),
+                    trans_bytes(0), recv_bytes(0), 
+                    file_full_path(""), file_path(""), file_name(""), file_size(0) {}
+            };
+
         public:
             CommDevice() : f_open(false) {}
             virtual ~CommDevice() = default;
-            virtual bool handleEvent(DeviceEvent event) = 0;
-            void close()
-            {
-                if (p_filetransfer)
-                {
-                    /* 释放资源 */
-                    delete p_filetransfer;
-                    p_filetransfer = nullptr;
-
-                    f_open = false;
-                }
-            }
-            void bindReadableEvent2Source(const callback_type &func)
+            virtual void open() = 0;
+            void close();
+            inline void bindReadableEvent2Source(const callback_type &func)
             {
                 f_serverreable_cb = func;
             }
-            bool is_open()
+            inline bool is_open()
             {
                 return f_open.load();
             }
+            HandleEventRetType handleEvent(DeviceEvent event);
         public:
             int             m_devid;
             std::string     m_devidentify;
@@ -51,6 +63,7 @@ namespace driver
             std::string     m_storageextentprefix;
             FileTransfer   *p_filetransfer;
             callback_type   f_serverreable_cb;
+            int             m_corrected_delay_us;
 
             std::atomic<bool>   f_open;
     };
@@ -63,7 +76,7 @@ namespace driver
         public:
             OpticalfiberCommDev(IniConfigParser *config, std::string config_item);
             ~OpticalfiberCommDev();
-            bool handleEvent(DeviceEvent event);
+            void open();
         private:
             unsigned short  m_serverport;
             std::string     m_targetip;
@@ -78,7 +91,7 @@ namespace driver
         public:
             RadiodigitalCommDev(IniConfigParser *config, std::string config_item);
             ~RadiodigitalCommDev();
-            bool handleEvent(DeviceEvent event);
+            void open();
         private:
             unsigned short  m_serverport;
             std::string     m_targetip;
@@ -93,7 +106,7 @@ namespace driver
         public:
             UnderwaterAcousticCommDev(IniConfigParser *config, std::string config_item);
             ~UnderwaterAcousticCommDev();
-            bool handleEvent(DeviceEvent event);
+            void open();
         private:
             std::string  m_serialport;
     };
@@ -106,7 +119,7 @@ namespace driver
         public:
             SatelliteCommDev(IniConfigParser *config, std::string config_item);
             ~SatelliteCommDev();
-            bool handleEvent(DeviceEvent event);
+            void open();
         private:
             std::string  m_serialport;
     };

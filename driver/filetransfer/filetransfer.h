@@ -23,19 +23,33 @@ namespace driver
     class FileTransfer
     {
         public:
-            using ftret_type = std::pair<bool, std::size_t>;
+            struct ftret_type 
+            {
+                bool status;                    // 执行状态
+                std::size_t trans_bytes;        // 发送字节
+                std::size_t recv_bytes;         // 接收字节
+                std::string file_full_path;     // 文件完整路径
+                std::string file_path;          // 文件路径
+                std::string file_name;          // 文件名
+                std::size_t file_size;          // 文件大小
+
+                ftret_type(bool st) : status(st), trans_bytes(0), recv_bytes(0),
+                                    file_path(""), file_name(""), file_size(0) {}
+            };
+
+        public:
             using str_type   = std::string;
             using cstr_type  = const str_type;
 
             virtual ftret_type transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name) = 0;
-            virtual ftret_type receive(str_type file_full_path) = 0;
+            virtual ftret_type receive(str_type file_full_path, cstr_type file_path) = 0;
             virtual ~FileTransfer() = default;
     
             ftret_type transfer(cstr_type &file_full_path)
             {
                 if (!checkFilePathExisted(file_full_path)) {
                     log_error("Don't existed file {}", file_full_path);
-                    return ftret_type(false, 0);
+                    return ftret_type(false);
                 }
                 auto ret = parseFileFullPath(file_full_path);
                 return transfer(file_full_path, ret.first, ret.second);
@@ -44,10 +58,10 @@ namespace driver
             {
                 if (!checkFilePathExisted(file_path)) {
                     log_error("Don't existed path {}", file_path);
-                    return ftret_type(false, 0);
+                    return ftret_type(false);
                 }
                 str_type file_full_path = jointFilePathAndFileName(file_path, REP_FILENAME_SYMBOL + extent_prefix + extent_suffix);
-                return receive(file_full_path);
+                return receive(file_full_path, file_path);
             }
         private:
             // 检测文件路径是否存在
@@ -97,10 +111,10 @@ namespace driver
             // 发送文件
             ftret_type transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name);
             // 接收文件
-            ftret_type receive(str_type file_full_path);
+            ftret_type receive(str_type file_full_path, cstr_type file_path);
         private:
             // 公共
-            const std::size_t                       TCP_TRANS_TUNK_SIZE = 50;
+            const std::size_t                       TCP_TRANS_TUNK_SIZE = 1024 * 1024;
             const std::string                       TCP_TRANS_SYNC_SYMBOL = "ok!";
             std::unique_ptr<ioc_type>               p_ioc;
             // 服务器相关
@@ -181,7 +195,7 @@ namespace driver
             // 发送文件
             ftret_type transfer(cstr_type file_full_path, cstr_type file_path, cstr_type file_name);
             // 接收文件
-            ftret_type receive(str_type file_full_path);
+            ftret_type receive(str_type file_full_path, cstr_type file_path);
         private:
             // 创建子线程监听客户端数据
             void _subthread_listen_client();
@@ -207,7 +221,7 @@ namespace driver
             // 将file_id/tunk_id转化为固定长度的字符串
             std::string _id_format_transfomer(std::size_t id);
             // 处理协议数据包
-            ftret_type _handle_protocol_package(ProtocolPackage &package);
+            void _handle_protocol_package(ProtocolPackage &package);
 
         private:
             // 公共
@@ -248,7 +262,7 @@ namespace driver
             std::mutex                                  s_file_management_lock;
             std::map<std::size_t, FileReceDescription>  s_file_management;              // 服务器接收到的文件管理
             // 客户端相关：发送文件
-            const std::vector<std::size_t>              FILEID_RANGE = {0, 10};         // 客户端文件ID范围
+            const std::vector<std::size_t>              FILEID_RANGE = {0, 100};        // 客户端文件ID范围
             SafeQueue<std::size_t>                      c_fileid_allocator;             // 客户端文件ID分配器
             std::mutex                                                      c_file_management_lock;
             std::map<std::size_t, std::shared_ptr<FileTransferDescription>> c_file_management;      // 客户端发送的文件管理
