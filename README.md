@@ -37,10 +37,9 @@
   
   ```
   root& docker run -it -P -d --network bridge -v [${PROJECT_DIR}]:/home/Gateway_Control_System --name control-env ubuntu_cpp:v2
-
+  
   for example: root& docker run -it -P -d --network bridge -v Y:\Studyplace_Web_Development\Gateway_Control_System:/home/Gateway_Control_System -v Y:\Studyplace_Web_Development\Gateway_Management_System:/home/Gateway_Management_System --name gateway-env --privileged --env "TZ=Asia/Shanghai" --env "NTP_SERVERS=cn.pool.ntp.org"ubuntu_cpp:v2
   ```
-
 
 * 配置完成，通过vscode附加到运行的容器环境
 
