@@ -1,9 +1,8 @@
-#include "commdevice.h"
-
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
 
+#include "commdevice.h"
 
 using namespace utility;
 using namespace driver;

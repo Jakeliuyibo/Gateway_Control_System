@@ -20,4 +20,4 @@ target_link_libraries(logger singleton)
 # 链接第三方静态库
 find_package(spdlog REQUIRED)   # 查找spdlog库
 find_package(fmt REQUIRED)      # 查找fmt库
-target_link_libraries(logger spdlog fmt)  # 链接spdlog库到你的可执行文件
+target_link_libraries(logger spdlog.so fmt.so)

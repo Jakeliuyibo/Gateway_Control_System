@@ -1,17 +1,17 @@
 #pragma once
 #include <string>
 #include <memory>
-#include <spdlog/spdlog.h>
-#include <spdlog/async.h>
-#include <spdlog/spdlog-inl.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/async_logger.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/rotating_file_sink.h>
-#include <spdlog/details/thread_pool.h>
-#include <spdlog/details/thread_pool-inl.h>
-#include <spdlog/sinks/daily_file_sink.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/async.h"
+#include "spdlog/spdlog-inl.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/async_logger.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/details/thread_pool.h"
+#include "spdlog/details/thread_pool-inl.h"
+#include "spdlog/sinks/daily_file_sink.h"
 
 #include "singleton.h"
 

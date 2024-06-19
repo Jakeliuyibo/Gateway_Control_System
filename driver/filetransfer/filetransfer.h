@@ -7,8 +7,11 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
-#include <boost/asio.hpp>
-#include <boost/filesystem.hpp>
+#include <map>
+
+#include "boost/asio.hpp"
+#include "boost/filesystem.hpp"
+
 #include "safequeue.h"
 #include "logger.h"
 

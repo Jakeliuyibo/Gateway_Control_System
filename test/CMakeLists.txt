@@ -17,5 +17,6 @@ target_link_libraries(device_control systime logger configparser reactor event f
 add_executable(pressure_test pressure_test.cpp)
 target_link_libraries(pressure_test systime logger configparser reactor event rabbitmqclient)
 
-
-
+find_package(GTest CONFIG REQUIRED)
+add_executable(test_googletest test_googletest.cpp)
+target_link_libraries(test_googletest gtest.a  gtest_main.a)

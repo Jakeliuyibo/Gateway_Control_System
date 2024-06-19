@@ -13,21 +13,22 @@ include_directories(
 # 设置静态库路径
 set(LIBRARY_OUTPUT_PATH ${LIBPATH})
 
+# 链接本地库
 link_directories(${LIBPATH})
 
-# 生成queue静态库，并进行链接
+# 生成queue动态库，并进行链接
 add_library(source SHARED ${SRC})
 target_link_libraries(source logger configparser rabbitmqclient)
 
-# 生成event静态库，并进行链接
+# 生成event动态库，并进行链接
 add_library(event SHARED ${SRC})
 find_package(jsoncpp REQUIRED)
-target_link_libraries(event logger jsoncpp)
+target_link_libraries(event logger jsoncpp.so)
 
-# 生成processor静态库，并进行链接
+# 生成processor动态库，并进行链接
 add_library(processor SHARED ${SRC})
 target_link_libraries(processor logger configparser threadpool)
 
-# 生成reactor静态库，并进行链接
+# 生成reactor动态库，并进行链接
 add_library(reactor SHARED ${SRC})
 target_link_libraries(reactor singleton logger configparser source event processor commdevice)

@@ -2,7 +2,9 @@
 
 #include <string>
 #include <unordered_map>
-#include <jsoncpp/json/json.h>
+
+#include "jsoncpp/json/json.h"
+
 #include "logger.h"
 
 namespace reactor

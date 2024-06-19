@@ -6,8 +6,10 @@
 #include <mutex>
 #include <exception>
 #include <condition_variable>
-#include "rabbitmq-c/amqp.h"
-#include "rabbitmq-c/tcp_socket.h"
+
+#include "amqp.h"
+#include "amqp_tcp_socket.h"
+
 #include "safequeue.h"
 
 namespace utility
