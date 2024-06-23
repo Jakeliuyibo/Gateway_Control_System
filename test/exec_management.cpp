@@ -15,9 +15,9 @@
 #include <thread>
 #include <limits.h>
 
-#include "systime.h"
-#include "logger.h"
-#include "configparser.h"
+#include "systime.hpp"
+#include "logger.hpp"
+#include "configparser.hpp"
 
 using namespace std;
 using namespace utility;
@@ -30,7 +30,7 @@ int main()
     log_critical("Exec Management Program Start ...");
 
     /* 初始化基础服务 */
-    std::vector<std::string> basic_service = {"./init_rabbitmqserver.sh", "./init_virtualserial.sh", "./init_redis.sh", "./init_apache2.sh"};
+    std::vector<std::string> basic_service = {"../scripts/init_rabbitmqserver.sh", "../scripts/init_virtualserial.sh", "../scripts/init_redis.sh", "../scripts/init_apache2.sh"};
     for(auto &script : basic_service)
     {
         int status = system(script.c_str());

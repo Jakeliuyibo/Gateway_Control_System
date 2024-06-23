@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "commdevice.h"
+#include "commdevice.hpp"
 
 using namespace utility;
 using namespace driver;

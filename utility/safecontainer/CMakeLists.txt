@@ -1,13 +1,24 @@
-cmake_minimum_required(VERSION 3.12)
 
-# 搜索源文件
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC)
+BuildModuleLibrary(
+    safecontainer safecontainer SHARED
+    
+    isAutoFindSource                TRUE
+    sourceList                      
+    incList                         
 
-# 搜索头文件
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    isLinkInc                       FALSE
+    linkIncType                     
+    linkIncList                     
 
-# 生成静态库
-set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(safecontainer SHARED ${SRC})
+    isLinkLib                       FALSE
+    linkLibType                     
+
+    isLinkLocalLib                  FALSE
+    linkLocalLibDir                 
+    linkLocalLibNameList            
+
+    isLink3rdPartyLib               FALSE
+    link3rdPartyLibsDir             
+    link3rdPartyLibNeedFindPkgList  
+    link3rdPartyLibNameList         
+)

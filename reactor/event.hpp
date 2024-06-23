@@ -5,7 +5,7 @@
 
 #include "jsoncpp/json/json.h"
 
-#include "logger.h"
+#include "logger.hpp"
 
 namespace reactor
 {

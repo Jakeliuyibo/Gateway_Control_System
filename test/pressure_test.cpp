@@ -3,11 +3,10 @@
 #include <chrono>
 #include <thread>
 
-#include "systime.h"
-#include "logger.h"
-#include "configparser.h"
-#include "event.h"
-#include "rabbitmqclient.h"
+#include "logger.hpp"
+#include "configparser.hpp"
+#include "event.hpp"
+#include "rabbitmqclient.hpp"
 
 using namespace std;
 using namespace utility;

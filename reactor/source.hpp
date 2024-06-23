@@ -3,9 +3,10 @@
 #include <string>
 #include <memory>
 #include <mutex>
-#include "configparser.h"
-#include "logger.h"
-#include "rabbitmqclient.h"
+
+#include "configparser.hpp"
+#include "logger.hpp"
+#include "rabbitmqclient.hpp"
 
 using namespace utility;
 

@@ -2,7 +2,7 @@
 #include <thread>
 #include <chrono>
 
-#include "reactor.h"
+#include "reactor.hpp"
 
 using namespace utility;
 using namespace reactor;

@@ -12,8 +12,8 @@
 #include "boost/asio.hpp"
 #include "boost/filesystem.hpp"
 
-#include "safequeue.h"
-#include "logger.h"
+#include "safequeue.hpp"
+#include "logger.hpp"
 
 using namespace utility;
 

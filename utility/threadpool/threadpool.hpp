@@ -12,7 +12,7 @@
 #include <thread>
 #include <stdexcept>
 
-#include "logger.h"
+#include "logger.hpp"
 
 namespace utility
 {

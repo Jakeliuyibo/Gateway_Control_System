@@ -1,8 +1,9 @@
 #pragma once
 
 #include <memory>
-#include "configparser.h"
-#include "threadpool.h"
+
+#include "configparser.hpp"
+#include "threadpool.hpp"
 
 using namespace utility;
 

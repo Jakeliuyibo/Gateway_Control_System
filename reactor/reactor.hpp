@@ -2,13 +2,14 @@
 
 #include <memory>
 #include <map>
-#include "singleton.h"
-#include "configparser.h"
-#include "logger.h"
-#include "source.h"
-#include "event.h"
-#include "processor.h"
-#include "commdevice.h"
+
+#include "singleton.hpp"
+#include "configparser.hpp"
+#include "logger.hpp"
+#include "commdevice.hpp"
+#include "source.hpp"
+#include "event.hpp"
+#include "processor.hpp"
 
 using namespace utility;
 using namespace driver;

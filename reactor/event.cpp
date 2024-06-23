@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "event.h"
+#include "event.hpp"
 
 using namespace reactor;
 

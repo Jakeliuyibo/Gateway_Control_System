@@ -38,20 +38,6 @@ RUN    apt-get install -y libspdlog-dev                                         
     && apt-get install -y librabbitmq-dev                                                   \
     && apt-get install -y libgtest-dev
 
-# # 安装 vcpkg包管理器并安装第三方c++库
-# # (访问不到换git clone https://gitee.com/jackboosy/vcpkg)
-# RUN    cd /home                                                                             \
-#     && git clone https://github.com/Microsoft/vcpkg.git                                     \
-#     && ./vcpkg/bootstrap-vcpkg.sh -disableMetrics                                           \
-#     && echo export PATH="/home/vcpkg:$PATH"           >> ~/.bashrc                          \
-#     && chmod 766 ~/.bashrc                                                                  \
-#     && ~/.bashrc                                                                            \
-#     && ./vcpkg/vcpkg install gtest                                                          \
-#     && ./vcpkg/vcpkg install spdlog                                                         \
-#     && ./vcpkg/vcpkg install jsoncpp                                                        \
-#     && ./vcpkg/vcpkg install boost-asio boost-filesystem boost-system boost-property-tree   \
-#     && ./vcpkg/vcpkg install librabbitmq                                               
-
 # 安装python和apache环境
 RUN    apt-get install -y python3-dev python3-pip apache2 libapache2-mod-wsgi-py3           \
     && ln -s /usr/bin/python3 /usr/bin/python                                               \
@@ -77,16 +63,6 @@ RUN    apt-get install -y erlang rabbitmq-server                                
     && service rabbitmq-server restart                                                      \
     && rabbitmq-plugins enable rabbitmq_management                                          \
     && service rabbitmq-server restart                                                                                                          
-
-# # 安装rabbitmq-client环境
-# # (Github链接 https://github.com/alanxz/rabbitmq-c)
-# # (Gitee链接  https://gitee.com/trackcc/rabbitmq-c.git)
-# RUN cd /home                                                                         \
-#     && git clone https://github.com/alanxz/rabbitmq-c                                \
-#     && cd rabbitmq-c; mkdir build; cd build                                          \
-#     && cmake ..                                                                      \
-#     && make                                                                          \
-#     && make install
 
 # 构建工程目录
 RUN    mkdir /home/Gateway_Control_System                                                   \

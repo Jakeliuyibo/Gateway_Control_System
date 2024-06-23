@@ -9,11 +9,11 @@
 #include "boost/asio.hpp"
 #include "boost/filesystem.hpp"
 
-#include "systime.h"
-#include "logger.h"
-#include "configparser.h"
-#include "event.h"
-#include "filetransfer.h"
+#include "systime.hpp"
+#include "logger.hpp"
+#include "configparser.hpp"
+#include "event.hpp"
+#include "filetransfer.hpp"
 
 using namespace utility;
 using namespace reactor;

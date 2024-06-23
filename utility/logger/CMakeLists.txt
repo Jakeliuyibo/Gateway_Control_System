@@ -1,23 +1,24 @@
-cmake_minimum_required(VERSION 3.12)
 
-# 搜索源文件
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC)
+BuildModuleLibrary(
+    logger logger SHARED
 
-# 搜索头文件
-include_directories(
-    ${PROJECT_DIR}/utility/singleton
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    isAutoFindSource                TRUE
+    sourceList                      
+    incList                         
 
-# 生成静态库
-set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(logger SHARED ${SRC})
+    isLinkInc                       TRUE
+    linkIncType                     PUBLIC
+    linkIncList                     ${PROJECT_DIR}/utility/singleton
 
-# 链接本地静态库
-link_directories(${LIBPATH})
-target_link_libraries(logger singleton)
+    isLinkLib                       TRUE
+    linkLibType                     PUBLIC
 
-# 链接第三方静态库
-find_package(spdlog REQUIRED)   # 查找spdlog库
-find_package(fmt REQUIRED)      # 查找fmt库
-target_link_libraries(logger spdlog.so fmt.so)
+    isLinkLocalLib                  TRUE
+    linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+    linkLocalLibNameList            singleton
+
+    isLink3rdPartyLib               TRUE
+    link3rdPartyLibsDir             /usr/lib/x86_64-linux-gnu
+    link3rdPartyLibNeedFindPkgList  spdlog fmt
+    link3rdPartyLibNameList         spdlog.so fmt.so
+)

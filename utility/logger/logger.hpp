@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+
 #include "spdlog/spdlog.h"
 #include "spdlog/async.h"
 #include "spdlog/spdlog-inl.h"
@@ -13,7 +14,7 @@
 #include "spdlog/details/thread_pool-inl.h"
 #include "spdlog/sinks/daily_file_sink.h"
 
-#include "singleton.h"
+#include "singleton.hpp"
 
 namespace utility
 {

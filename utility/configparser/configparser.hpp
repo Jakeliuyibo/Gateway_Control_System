@@ -2,8 +2,10 @@
 
 #include <string>
 #include <fstream>
+
 #include "boost/property_tree/ptree.hpp"
-#include "logger.h"
+
+#include "logger.hpp"
 
 namespace utility
 {

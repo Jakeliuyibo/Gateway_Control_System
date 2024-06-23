@@ -1,19 +1,24 @@
-cmake_minimum_required(VERSION 3.12)
 
-# 搜索源文件
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SRC)
+BuildModuleLibrary(
+    threadpool threadpool SHARED
+    
+    isAutoFindSource                TRUE
+    sourceList                      
+    incList                         
 
-# 搜索头文件
-include_directories(
-	${PROJECT_DIR}/utility/singleton
-    ${PROJECT_DIR}/utility/logger
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    isLinkInc                       TRUE
+    linkIncType                     PUBLIC
+    linkIncList                     ${PROJECT_DIR}/utility/logger
 
-# 生成静态库
-set(LIBRARY_OUTPUT_PATH ${LIBPATH})
-add_library(threadpool SHARED ${SRC})
+    isLinkLib                       TRUE
+    linkLibType                     PUBLIC
 
-# 链接本地静态库
-link_directories(${LIBPATH})
-target_link_libraries(threadpool logger)
+    isLinkLocalLib                  TRUE
+    linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+    linkLocalLibNameList            logger
+
+    isLink3rdPartyLib               FALSE
+    link3rdPartyLibsDir             
+    link3rdPartyLibNeedFindPkgList  
+    link3rdPartyLibNameList         
+)

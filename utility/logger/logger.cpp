@@ -1,7 +1,7 @@
+#include "logger.hpp"
+
 #include <iostream>
 #include <vector>
-
-#include "logger.h"
 
 using namespace utility;
 

@@ -10,7 +10,7 @@
 #include "amqp.h"
 #include "amqp_tcp_socket.h"
 
-#include "safequeue.h"
+#include "safequeue.hpp"
 
 namespace utility
 {
