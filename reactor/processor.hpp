@@ -12,20 +12,22 @@ namespace reactor
     class Processor
     {
         public:
-            // 构造
+            // 构造和析构
             Processor(IniConfigParser *parser);
-            // 析构
             ~Processor();
+
             // 添加任务
             template<class F, class... Args>
-            auto submit(F &&f, Args&&... args) -> std::future<decltype(f(args...))>
+            auto Submit(F &&f, Args&&... args) -> std::future<decltype(f(args...))>
             {
-                return p_pool->submit(f, args...);
+                return pool_->Submit(f, args...);
             }
+            
             // 关闭处理池
-            void shutdown();
+            void Shutdown();
+            
         private:
-            std::unique_ptr<ThreadPool> p_pool;
+            std::unique_ptr<ThreadPool> pool_;
     };
 }
 

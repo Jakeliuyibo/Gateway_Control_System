@@ -6,7 +6,7 @@ namespace utility
     class Singleton
     {
     public:
-        static T * instance()
+        static T * Instance()
         {
             static T instance;
             return &instance;
@@ -18,11 +18,13 @@ namespace utility
         ~Singleton() = default;
     };
 
-    #define SINGLETON(classname)                                \
-        friend class Singleton<classname>;                      \
-        private:                                                \
-            classname() = default;                              \
-            classname(const classname &) = delete;              \
-            classname & operator = (const classname &) = delete;\
-            ~classname() = default
+    #define SINGLETON(ClassName)                                            \
+        friend class Singleton<ClassName>;                                  \
+        public:                                                             \
+            static ClassName* Instance(){static ClassName ins;return &ins;} \
+        private:                                                            \
+            ClassName() = default;                                          \
+            ClassName(const ClassName &) = delete;                          \
+            ClassName & operator = (const ClassName &) = delete;            \
+            ~ClassName() = default
 }

@@ -36,48 +36,54 @@ namespace utility
         // 单例模式
         SINGLETON(Logger);
 
-        public:
-            enum WorkStream
-            {
-                STREAM_CONSOLE = 0x1,   // 控制台
-                STREAM_FILE    = 0x2,   // 文件
-                STREAM_BOTH    = 0x3,   // 控制台 + 文件
-            };
+    public:
+        // 日志输出流
+        enum class WorkStream
+        {
+            CONSOLE = 0x1, // 控制台
+            FILE = 0x2, // 文件
+            BOTH = 0x3, // 控制台 + 文件
+        };
 
-            enum WorkMode
-            {
-                MODE_SYNC      = 0x1,   // 同步
-                MODE_ASYNC     = 0x2,   // 异步
-            };
+        // 输出模式
+        enum class WorkMode
+        {
+            SYNC = 0x1, // 同步
+            ASYNC = 0x2, // 异步
+        };
 
-            enum WorkLevel
-            {
-                LEVEL_TRACE    = 0x0,   // 跟踪
-                LEVEL_DEBUG    = 0x1,   // 调试
-                LEVEL_INFO     = 0x2,   // 信息
-                LEVEL_WARNING  = 0x3,   // 警告
-                LEVEL_ERROR    = 0x4,   // 错误
-                LEVEL_CRITICAL = 0x5,   // 重要
-                LEVEL_OFF      = 0x6,   // 关闭
-            };
+        enum class WorkLevel : int
+        {
+            TRACE = 0x0, // 跟踪
+            DEBUG = 0x1, // 调试
+            INFO = 0x2, // 信息
+            WARNING = 0x3, // 警告
+            ERROR = 0x4, // 错误
+            CRITICAL = 0x5, // 重要
+            OFF = 0x6, // 关闭
+        };
 
-        public:
-            static Logger *instance()
-            {
-                static Logger ins;
-                return &ins;
-            }
+    public:
+        // 初始化
+        [[nodiscard]] bool Init(const std::string& filePath,
+            const WorkStream stream = WorkStream::BOTH,
+            const WorkMode mode = WorkMode::SYNC,
+            const WorkLevel level = WorkLevel::DEBUG,
+            const WorkLevel levelConsole = WorkLevel::WARNING,
+            const WorkLevel levelFile = WorkLevel::DEBUG
+        );
 
-            bool init(  const std::string &filepath,
-                        const WorkStream work_stream = STREAM_BOTH,
-                        const WorkMode work_mode = MODE_SYNC, 
-                        const WorkLevel work_level = LEVEL_DEBUG,
-                        const WorkLevel level_console = LEVEL_WARNING,
-                        const WorkLevel level_file = LEVEL_DEBUG
-                        );
-
-            void deinit();
-        private:
-            std::shared_ptr<spdlog::logger> m_pLogger;
+        // 缺省
+        void Deinit();
+    
+    private:
+        // 工作队列大小
+        static constexpr int kWorkQueueSize = 8192;
+        // 工作线程数量
+        static constexpr int kWorkThreadCount = 3; 
+        // 终端输出格式
+        inline static const std::string kConsoleFormat = "[%^%l%$] %v";
+        // 文件输出格式
+        inline static const std::string kFileFormat = "[%Y-%m-%d %T.%e] <pid %P:%t> [%^%l%$] [%s:%!:%#] %v";
     };
 }

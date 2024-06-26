@@ -9,17 +9,17 @@
 using namespace utility;
 
 // 获取系统时间
-std::string utility::getSystime()
+std::string utility::GetSystime()
 {
     time_t ticks = time(NULL);
-    struct tm *ptm = localtime(&ticks);
-    char timestamp[32];
-    memset(timestamp, 0, sizeof(timestamp));
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", ptm);
-    return timestamp;
+    struct tm *pTm = localtime(&ticks);
+    char timeStamp[32];
+    memset(timeStamp, 0, sizeof(timeStamp));
+    strftime(timeStamp, sizeof(timeStamp), "%Y-%m-%d %H:%M:%S", pTm);
+    return timeStamp;
 }
 
-std::string utility::getSystimeUs()
+std::string utility::GetSystimeUs()
 {
     auto now = std::chrono::system_clock::now();
     std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
@@ -36,12 +36,12 @@ std::string utility::getSystimeUs()
 }
 
 // 获取系统时间，文件名格式
-std::string utility::getSystimeByFilenameFormat()
+std::string utility::GetSystimeByFilenameFormat()
 {
     time_t ticks = time(NULL);
-    struct tm *ptm = localtime(&ticks);
-    char timestamp[32];
-    memset(timestamp, 0, sizeof(timestamp));
-    strftime(timestamp, sizeof(timestamp), "%Y_%m_%d_%H_%M_%S", ptm);
-    return timestamp;
+    struct tm *pTm = localtime(&ticks);
+    char timeStamp[32];
+    memset(timeStamp, 0, sizeof(timeStamp));
+    strftime(timeStamp, sizeof(timeStamp), "%Y_%m_%d_%H_%M_%S", pTm);
+    return timeStamp;
 }

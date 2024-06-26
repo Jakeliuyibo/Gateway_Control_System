@@ -18,24 +18,24 @@ int main()
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     /* 初始化日志模块           */
-    Logger::instance()->init("../logs/C.log", Logger::STREAM_BOTH, Logger::MODE_SYNC, 
-                                              Logger::LEVEL_DEBUG, Logger::LEVEL_INFO, Logger::LEVEL_DEBUG);
+    auto fg = Logger::Instance()->Init("../logs/C.log", Logger::WorkStream::BOTH, Logger::WorkMode::SYNC,
+        Logger::WorkLevel::DEBUG, Logger::WorkLevel::INFO, Logger::WorkLevel::DEBUG);
     log_critical("Device Control Program Start ...");
 
     /* 初始化配置模块           */
     IniConfigParser config;
     bool parserFlag = true;
-    parserFlag = config.load("../config/defconfig.ini");
+    parserFlag = config.Load("../config/defconfig.ini");
 
     /* 初始化Reactor架构        */
-    Reactor::instance()->init(&config);
+    Reactor::Instance()->Init(&config);
 
     /* 监听处理事件 */
-    Reactor::instance()->listen();
+    Reactor::Instance()->Listen();
 
     /* 注销日志模块             */
     log_critical("Device Control Program End ...");
-    Logger::instance()->deinit();
+    Logger::Instance()->Deinit();
 
     return 0;
 }

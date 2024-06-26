@@ -20,15 +20,15 @@ namespace reactor
             // 析构
             virtual ~Event() {}
             // 添加属性
-            void add(std::string key, std::string val);
+            void Add(std::string key, std::string val);
             // 获取值
-            std::string get(std::string key);
+            std::string Get(std::string key);
             // 序列化
-            std::string serial();
+            std::string Serial();
             // 反序列化
-            void deserial(std::string ser);
+            void Deserial(std::string ser);
         private:
-            Json::Value m_obj;
+            Json::Value obj_;
     };
 
     /**
@@ -37,54 +37,56 @@ namespace reactor
     class DeviceEvent : public Event
     {
         public:
-            enum EventType
+            enum class EventType
             {
-                EVENT_POWER_ON  = 0x1,      // 上电
-                EVENT_POWER_OFF = 0x2,      // 下电
-                EVENT_OPEN      = 0x3,      // 打开
-                EVENT_CLOSE     = 0x4,      // 关闭
-                EVENT_CONFIG    = 0x5,      // 配置
-                EVENT_WRITE     = 0x6,      // 写入
-                EVENT_READ      = 0x7,      // 读取
-                EVENT_READYREAD = 0x8,      // 可读
-                EVENT_OTHER     = 0x9       // 其他
+                POWER_ON  = 0x1,      // 上电
+                POWER_OFF = 0x2,      // 下电
+                OPEN      = 0x3,      // 打开
+                CLOSE     = 0x4,      // 关闭
+                CONFIG    = 0x5,      // 配置
+                WRITE     = 0x6,      // 写入
+                READ      = 0x7,      // 读取
+                READYREAD = 0x8,      // 可读
+                OTHER     = 0x9       // 其他
             };
 
             std::unordered_map<EventType, std::string> EventTypeMapping = {
-                {EVENT_POWER_ON     , "power on"},
-                {EVENT_POWER_OFF    , "power off"},
-                {EVENT_OPEN         , "open"},
-                {EVENT_CLOSE        , "close"},
-                {EVENT_CONFIG       , "config"},
-                {EVENT_WRITE        , "write"},
-                {EVENT_READ         , "read"},
-                {EVENT_READYREAD    , "readyread"},
-                {EVENT_OTHER        , "other"}
+                {EventType::POWER_ON , "power on"},
+                {EventType::POWER_OFF, "power off"},
+                {EventType::OPEN     , "open"},
+                {EventType::CLOSE    , "close"},
+                {EventType::CONFIG   , "config"},
+                {EventType::WRITE    , "write"},
+                {EventType::READ     , "read"},
+                {EventType::READYREAD, "readyread"},
+                {EventType::OTHER    , "other"}
             };
 
-            // 构造
+            // 构造和析构
             DeviceEvent() {}
             DeviceEvent(int id, EventType type, 
                         int device, std::string action, 
                         std::string m_status, std::string m_other);
-            // 析构
             ~DeviceEvent(){}
+
             // 解析
-            bool parse(const std::string &ser);
+            bool Parse(const std::string &ser);
+
             // 修改
-            void modify_id(int desc);
-            void modify_type(EventType desc);
-            void modify_device(int desc);
-            void modify_action(std::string desc);
-            void modify_status(std::string desc);
-            void modify_other(std::string desc);
+            void ModifyId(int desc);
+            void ModifyType(EventType desc);
+            void ModifyDevice(int desc);
+            void ModifyAction(std::string desc);
+            void ModifyStatus(std::string desc);
+            void ModifyOther(std::string desc);
+
         public:
-            int         m_id;           // ID
-            EventType   m_type;         // 事件类型
-            int         m_device;       // 设备ID
-            std::string m_action;       // 动作
-            std::string m_status;       // 状态
-            std::string m_other;        // 其他
+            int         id_;           // ID
+            EventType   type_;         // 事件类型
+            int         device_;       // 设备ID
+            std::string action_;       // 动作
+            std::string status_;       // 状态
+            std::string other_;        // 其他
     };
 
 

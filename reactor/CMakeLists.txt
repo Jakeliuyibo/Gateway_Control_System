@@ -91,7 +91,7 @@ BuildModuleLibrary(
 
     isLinkLocalLib                  TRUE
     linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-    linkLocalLibNameList            singleton logger configparser source event processor commdevice
+    linkLocalLibNameList            logger configparser source event processor commdevice
 
     isLink3rdPartyLib               FALSE
     link3rdPartyLibsDir             

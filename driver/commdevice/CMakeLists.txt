@@ -8,7 +8,7 @@ BuildModuleLibrary(
 
     isLinkInc                       TRUE
     linkIncType                     PUBLIC
-    linkIncList                     ${PROJECT_DIR}/utility/systime ${PROJECT_DIR}/utility/logger ${PROJECT_DIR}/utility/configparser ${PROJECT_DIR}/utility/safecontainer ${PROJECT_DIR}/driver/filetransfer ${PROJECT_DIR}/reactor
+    linkIncList                     ${PROJECT_DIR}/utility/systime ${PROJECT_DIR}/utility/logger ${PROJECT_DIR}/utility/configparser ${PROJECT_DIR}/driver/filetransfer ${PROJECT_DIR}/reactor
 
     isLinkLib                       TRUE
     linkLibType                     PUBLIC

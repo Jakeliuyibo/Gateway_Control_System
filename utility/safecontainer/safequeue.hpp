@@ -7,71 +7,79 @@
 
 namespace utility
 {
-    template <typename T>
+    template <typename V>
     class SafeQueue
     {
+    public:
+        using ValueType = V;
+
         public:
-            // 构造
+            // 构造和析构
             SafeQueue() {}
-            // 析构
             ~SafeQueue() {}
+
             // 添加
-            void enqueue(T &t)
+            void Enqueue(ValueType &t)
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                m_queue.emplace(t);
-                m_cv.notify_one();
+                std::unique_lock<std::mutex> lk(lock_);
+                queue_.emplace(t);
+                cv_.notify_one();
             }
-            void enqueue(T &&t)
+
+            void Enqueue(ValueType &&t)
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                m_queue.emplace(std::move(t));
-                m_cv.notify_one();
+                std::unique_lock<std::mutex> lk(lock_);
+                queue_.emplace(std::move(t));
+                cv_.notify_one();
             }
+
             // 可选阻塞或非阻塞取出
-            bool dequeue(T &t, bool block = false)
+            bool Dequeue(ValueType &t, bool block = false)
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                if (m_queue.empty())
+                std::unique_lock<std::mutex> lk(lock_);
+                if (queue_.empty())
                 {
                     if (block) {
                         // 阻塞等待
-                        m_cv.wait(lock, [this] { return !m_queue.empty(); });
+                        cv_.wait(lk, [this] { return !queue_.empty(); });
                     } else {
                         return false;
                     }
                 }
-                t = std::move(m_queue.front());
-                m_queue.pop();
+                t = std::move(queue_.front());
+                queue_.pop();
                 return true;
             }
+
             // 非阻塞方式取出所有数据到容器
-            bool dequeueAllIntoVec(std::vector<T> & vec)
+            bool DequeueAllIntoVec(std::vector<ValueType> & vec)
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                while (!m_queue.empty())
+                std::unique_lock<std::mutex> lk(lock_);
+                while (!queue_.empty())
                 {
-                    vec.emplace_back(std::move(m_queue.front()));
-                    m_queue.pop();
+                    vec.emplace_back(std::move(queue_.front()));
+                    queue_.pop();
                 }
                 return !vec.empty();
             }
+
             // 是否为空
-            bool empty()
+            bool Empty()
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                return m_queue.empty();
+                std::unique_lock<std::mutex> lock(lock_);
+                return queue_.empty();
             }
+
             // 获取队列大小
-            int size()
+            int Size()
             {
-                std::unique_lock<std::mutex> lock(m_lock);
-                return m_queue.size();
+                std::unique_lock<std::mutex> lock(lock_);
+                return queue_.size();
             }
 
         private:
-            std::mutex m_lock;
-            std::condition_variable m_cv;
-            std::queue<T> m_queue;
+            std::mutex lock_;
+            std::condition_variable cv_;
+            std::queue<ValueType> queue_;
     };
 }

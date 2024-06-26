@@ -10,34 +10,34 @@ using namespace reactor;
  *
  *************************************************************************/
 // 添加属性
-void Event::add(std::string key, std::string val)
+void Event::Add(std::string key, std::string val)
 {
-    m_obj[key] = val;
+    obj_[key] = val;
 }
 
 // 获取值
-std::string Event::get(std::string key)
+std::string Event::Get(std::string key)
 {
-    if(!m_obj.isMember(key))
+    if(!obj_.isMember(key))
     {
         log_error("Event Json-Obj not contains key {}", key);
         return "";
     }
 
-    return m_obj[key].asString();
+    return obj_[key].asString();
 }
 
 // 序列化
-std::string Event::serial()
+std::string Event::Serial()
 {
-    return m_obj.toStyledString();
+    return obj_.toStyledString();
 }
 
 // 反序列化
-void Event::deserial(std::string ser)
+void Event::Deserial(std::string ser)
 {
     Json::Reader reader;
-    reader.parse(ser, m_obj);
+    reader.parse(ser, obj_);
 }
 
 
@@ -49,22 +49,22 @@ void Event::deserial(std::string ser)
 // 构造
 DeviceEvent::DeviceEvent(int id, EventType type, int device, std::string action, 
             std::string status, std::string other)
-    :   m_id(id),
-        m_type(type),
-        m_device(device),
-        m_action(action),
-        m_status(status),
-        m_other(other)
+    :   id_(id),
+        type_(type),
+        device_(device),
+        action_(action),
+        status_(status),
+        other_(other)
 {
-    modify_id(m_id);
-    modify_type(m_type);
-    modify_device(m_device);
-    modify_action(m_action);
-    modify_status(m_status);
-    modify_other(m_other);
+    ModifyId(id_);
+    ModifyType(type_);
+    ModifyDevice(device_);
+    ModifyAction(action_);
+    ModifyStatus(status_);
+    ModifyOther(other_);
 }
 
-bool DeviceEvent::parse(const std::string &ser)
+bool DeviceEvent::Parse(const std::string &ser)
 {
     if(     ser.find("id")      == std::string::npos
         ||  ser.find("type")    == std::string::npos
@@ -78,47 +78,47 @@ bool DeviceEvent::parse(const std::string &ser)
         return false;
     }
 
-    deserial(ser);
-    m_id     = std::stoi(get("id"));
-    std::string type_desc = get("type");
+    Deserial(ser);
+    id_ = std::stoi(Get("id"));
+    std::string typeDesc = Get("type");
     for(auto &it : EventTypeMapping)
     {
-        if(it.second == type_desc)
+        if(it.second == typeDesc)
         {
-            m_type = it.first;
+            type_ = it.first;
             break;
         }
     }
-    m_device = std::stoi(get("device"));
-    m_action = get("action");
-    m_status = get("status");
-    m_other  = get("other");
+    device_ = std::stoi(Get("device"));
+    action_ = Get("action");
+    status_ = Get("status");
+    other_  = Get("other");
 
     return true;
 }
 
 // 修改
-void DeviceEvent::modify_id(int desc)
+void DeviceEvent::ModifyId(int desc)
 {
-    add("id"    , std::to_string(desc));
+    Add("id"    , std::to_string(desc));
 }
-void DeviceEvent::modify_type(EventType desc)
+void DeviceEvent::ModifyType(EventType desc)
 {
-    add("type"  , EventTypeMapping[desc]);
+    Add("type"  , EventTypeMapping[desc]);
 }
-void DeviceEvent::modify_device(int desc)
+void DeviceEvent::ModifyDevice(int desc)
 {
-    add("device", std::to_string(desc));
+    Add("device", std::to_string(desc));
 }
-void DeviceEvent::modify_action(std::string desc)
+void DeviceEvent::ModifyAction(std::string desc)
 {
-    add("action", desc);
+    Add("action", desc);
 }
-void DeviceEvent::modify_status(std::string desc)
+void DeviceEvent::ModifyStatus(std::string desc)
 {
-    add("status", desc);
+    Add("status", desc);
 }
-void DeviceEvent::modify_other(std::string desc)
+void DeviceEvent::ModifyOther(std::string desc)
 {
-    add("other", desc);
+    Add("other", desc);
 }

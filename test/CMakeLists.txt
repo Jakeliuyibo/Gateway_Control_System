@@ -76,22 +76,22 @@ BuildModuleExec(
 
 # 生成 pressure_test 可执行程序
 BuildModuleExec(
-    test test_googletest
+    test module_test
 
     isAutoFindSource                FALSE
-    sourceList                      test_googletest.cpp
+    sourceList                      module_test.cpp
     incList                         
 
-    isLinkInc                       FALSE
+    isLinkInc                       TRUE
     linkIncType                     PRIVATE
-    linkIncList                     
+    linkIncList                     ${PROJECT_DIR}/utility/logger ${PROJECT_DIR}/utility/configparser ${PROJECT_DIR}/utility/safecontainer ${PROJECT_DIR}/utility/systime ${PROJECT_DIR}/utility/singleton ${PROJECT_DIR}/utility/threadpool ${PROJECT_DIR}/reactor
 
     isLinkLib                       TRUE
     linkLibType                     PRIVATE
 
-    isLinkLocalLib                  FALSE
-    linkLocalLibDir                 
-    linkLocalLibNameList            
+    isLinkLocalLib                  TRUE
+    linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+    linkLocalLibNameList            logger configparser systime threadpool source
 
     isLink3rdPartyLib               TRUE
     link3rdPartyLibsDir             /usr/lib/x86_64-linux-gnu

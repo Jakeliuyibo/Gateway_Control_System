@@ -4,30 +4,35 @@ using namespace utility;
 using namespace driver;
 using namespace reactor;
 
-UnderwaterAcousticCommDev::UnderwaterAcousticCommDev(IniConfigParser *config, std::string config_item)
+UnderwaterAcousticCommDev::UnderwaterAcousticCommDev(IniConfigParser *configParser, std::string configItem)
 {
     /* 解析参数 */
     bool parserFlag = true;
-    parserFlag &= config->getValue<int           >(config_item, "DEVICE_ID"           , m_devid);
-    parserFlag &= config->getValue<std::string   >(config_item, "DEVICE_IDENTIFY"     , m_devidentify);
-    parserFlag &= config->getValue<std::string   >(config_item, "STORAGE_PATH"        , m_storagepath);
-    parserFlag &= config->getValue<std::string   >(config_item, "STORAGE_EXTENTPREFIX", m_storageextentprefix);
-    parserFlag &= config->getValue<std::string   >(config_item, "SERIAL_PORT"         , m_serialport);
-    parserFlag &= config->getValue<int           >(config_item, "CORRECTED_DELAY_US"  , m_corrected_delay_us);
+    parserFlag &= configParser->GetValue<int           >(configItem, "DEVICE_ID"           , devId_);
+    parserFlag &= configParser->GetValue<std::string   >(configItem, "DEVICE_IDENTIFY"     , devIdentify_);
+    parserFlag &= configParser->GetValue<std::string   >(configItem, "STORAGE_PATH"        , storagePath_);
+    parserFlag &= configParser->GetValue<std::string   >(configItem, "STORAGE_EXTENTPREFIX", storageExtentPrefix_);
+    parserFlag &= configParser->GetValue<std::string   >(configItem, "SERIAL_PORT"         , serialPort_);
+    parserFlag &= configParser->GetValue<int           >(configItem, "CORRECTED_DELAY_US"  , correctedDelayUs_);
+
+    if (!parserFlag)
+    {
+        log_error("UnderwaterAcousticCommDev Init Failed.");
+    }
 }
 
 UnderwaterAcousticCommDev::~UnderwaterAcousticCommDev()
 {
-    close();
+    Close();
 }
 
-void UnderwaterAcousticCommDev::open()
+void UnderwaterAcousticCommDev::Open()
 {
-    p_filetransfer = new SerialFileTransfer(
-        m_serialport,
+    pFileTransfer_ = new SerialFileTransfer(
+        serialPort_,
         [this] ()
         {
-            DeviceEvent event(0, DeviceEvent::EVENT_READYREAD, m_devid, "", "", "");
-            f_serverreable_cb(event);
+            DeviceEvent event(0, DeviceEvent::EventType::READYREAD, devId_, "", "", "");
+            serverReabableCbkFunc_(event);
         });
 }

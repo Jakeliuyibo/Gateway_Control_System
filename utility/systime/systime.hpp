@@ -5,9 +5,11 @@
 namespace utility 
 {
     // 获取系统时间
-    std::string getSystime();
+    std::string GetSystime();
+
     // 获取系统时间
-    std::string getSystimeUs();
+    std::string GetSystimeUs();
+    
     // 获取系统时间，文件名格式
-    std::string getSystimeByFilenameFormat();
+    std::string GetSystimeByFilenameFormat();
 }

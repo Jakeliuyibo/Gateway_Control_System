@@ -12,8 +12,8 @@
 #include "systime.hpp"
 #include "logger.hpp"
 #include "configparser.hpp"
-#include "event.hpp"
 #include "filetransfer.hpp"
+#include "event.hpp"
 
 using namespace utility;
 using namespace reactor;
@@ -22,52 +22,53 @@ namespace driver
 {
     class CommDevice
     {
-        public:
-            using callback_type = std::function<void(DeviceEvent event)>;
+    public:
+        using CallBackType = std::function<void(DeviceEvent event)>;
 
-            struct HandleEventRetType 
-            {
-                bool status;                    // 执行状态
-                std::string sched_time;         // 调度时间
-                std::string sched_finish_time;  // 调度完成时间
-                std::size_t trans_bytes;        // 发送字节
-                std::size_t recv_bytes;         // 接收字节
-                std::string file_full_path;     // 文件完整路径
-                std::string file_path;          // 文件路径
-                std::string file_name;          // 文件名
-                std::size_t file_size;          // 文件大小
+        struct HandleEventRetType
+        {
+            bool status_;                  // 执行状态
+            std::string schedTime_;        // 调度时间
+            std::string schedFinishTime_;  // 调度完成时间
+            std::size_t transBytes_;       // 发送字节
+            std::size_t recvBytes_;        // 接收字节
+            std::string fileFullPath_;     // 文件完整路径
+            std::string filePath_;         // 文件路径
+            std::string fileName_;         // 文件名
+            std::size_t fileSize_;         // 文件大小
 
-                HandleEventRetType(bool st) : 
-                    status(st), 
-                    sched_time(""), sched_finish_time(""),
-                    trans_bytes(0), recv_bytes(0), 
-                    file_full_path(""), file_path(""), file_name(""), file_size(0) {}
-            };
+            HandleEventRetType(bool st) :
+                status_(st),
+                schedTime_(""), schedFinishTime_(""),
+                transBytes_(0), recvBytes_(0),
+                fileFullPath_(""), filePath_(""), fileName_(""), fileSize_(0) {}
+        };
 
-        public:
-            CommDevice() : f_open(false) {}
-            virtual ~CommDevice() = default;
-            virtual void open() = 0;
-            void close();
-            inline void bindReadableEvent2Source(const callback_type &func)
-            {
-                f_serverreable_cb = func;
-            }
-            inline bool is_open()
-            {
-                return f_open.load();
-            }
-            HandleEventRetType handleEvent(DeviceEvent event);
-        public:
-            int             m_devid;
-            std::string     m_devidentify;
-            std::string     m_storagepath;
-            std::string     m_storageextentprefix;
-            FileTransfer   *p_filetransfer;
-            callback_type   f_serverreable_cb;
-            int             m_corrected_delay_us;
+    public:
+        CommDevice() : isOpen_(false) {}
+        virtual ~CommDevice() = default;
+        virtual void Open() = 0;
+        void Close();
+        inline void BindReadableEvent2Source(const CallBackType& func)
+        {
+            serverReabableCbkFunc_ = func;
+        }
+        inline bool IsOpen()
+        {
+            return isOpen_.load();
+        }
+        HandleEventRetType HandleEvent(DeviceEvent event);
 
-            std::atomic<bool>   f_open;
+    public:
+        int             devId_;
+        std::string     devIdentify_;
+        std::string     storagePath_;
+        std::string     storageExtentPrefix_;
+        FileTransfer   *pFileTransfer_;
+        CallBackType    serverReabableCbkFunc_;
+        int             correctedDelayUs_;
+
+        std::atomic<bool>   isOpen_;
     };
 
     /**
@@ -75,14 +76,14 @@ namespace driver
      */
     class OpticalfiberCommDev : public CommDevice
     {
-        public:
-            OpticalfiberCommDev(IniConfigParser *config, std::string config_item);
-            ~OpticalfiberCommDev();
-            void open();
-        private:
-            unsigned short  m_serverport;
-            std::string     m_targetip;
-            unsigned short  m_targetport;
+    public:
+        OpticalfiberCommDev(IniConfigParser* configParser, std::string configItem);
+        ~OpticalfiberCommDev();
+        void Open();
+    private:
+        unsigned short  serverPort_;
+        std::string     targetIp_;
+        unsigned short  targetPort_;
     };
 
     /**
@@ -90,14 +91,14 @@ namespace driver
      */
     class RadiodigitalCommDev : public CommDevice
     {
-        public:
-            RadiodigitalCommDev(IniConfigParser *config, std::string config_item);
-            ~RadiodigitalCommDev();
-            void open();
-        private:
-            unsigned short  m_serverport;
-            std::string     m_targetip;
-            unsigned short  m_targetport;
+    public:
+        RadiodigitalCommDev(IniConfigParser* configParser, std::string configItem);
+        ~RadiodigitalCommDev();
+        void Open();
+    private:
+        unsigned short  serverPort_;
+        std::string     targetIp_;
+        unsigned short  targetPort_;
     };
 
     /**
@@ -105,12 +106,12 @@ namespace driver
      */
     class UnderwaterAcousticCommDev : public CommDevice
     {
-        public:
-            UnderwaterAcousticCommDev(IniConfigParser *config, std::string config_item);
-            ~UnderwaterAcousticCommDev();
-            void open();
-        private:
-            std::string  m_serialport;
+    public:
+        UnderwaterAcousticCommDev(IniConfigParser* configParser, std::string configItem);
+        ~UnderwaterAcousticCommDev();
+        void Open();
+    private:
+        std::string  serialPort_;
     };
 
     /**
@@ -118,11 +119,11 @@ namespace driver
      */
     class SatelliteCommDev : public CommDevice
     {
-        public:
-            SatelliteCommDev(IniConfigParser *config, std::string config_item);
-            ~SatelliteCommDev();
-            void open();
-        private:
-            std::string  m_serialport;
+    public:
+        SatelliteCommDev(IniConfigParser* configParser, std::string configItem);
+        ~SatelliteCommDev();
+        void Open();
+    private:
+        std::string  serialPort_;
     };
 }

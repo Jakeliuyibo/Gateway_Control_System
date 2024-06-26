@@ -2,8 +2,8 @@
  * @Author       : liuyibo
  * @Date         : 2023-12-22 07:05:38
  * @LastEditors  : liuyibo 1299502716@qq.com
- * @LastEditTime : 2024-01-07 09:43:24
- * @FilePath     : /home/Gateway_Control_System/test/exec_management.cpp
+ * @LastEditTime : 2024-06-25 16:46:42
+ * @FilePath     : /Gateway_Control_System/test/exec_management.cpp
  * @Description  : 程序执行管理，负责基础服务及应用软件的创建、关闭和维护
  */
 #include <iostream>
@@ -24,14 +24,17 @@ using namespace utility;
 
 int main()
 {
+    /* 定义基础服务和用户应用 */
+    static std::vector<std::string> basicService = {"../scripts/init_rabbitmqserver.sh", "../scripts/init_virtualserial.sh", "../scripts/init_redis.sh", "../scripts/init_apache2.sh"};
+    static std::vector<std::string> userApp = {"./device_control", "./pressure_test"};
+
     /* 初始化日志模块           */
-    Logger::instance()->init("../logs/EM.log", Logger::STREAM_BOTH, Logger::MODE_SYNC, 
-                                              Logger::LEVEL_DEBUG, Logger::LEVEL_INFO, Logger::LEVEL_DEBUG);
+    auto fg = Logger::Instance()->Init("../logs/EM.log", Logger::WorkStream::BOTH, Logger::WorkMode::SYNC,
+        Logger::WorkLevel::DEBUG, Logger::WorkLevel::INFO, Logger::WorkLevel::DEBUG);
     log_critical("Exec Management Program Start ...");
 
     /* 初始化基础服务 */
-    std::vector<std::string> basic_service = {"../scripts/init_rabbitmqserver.sh", "../scripts/init_virtualserial.sh", "../scripts/init_redis.sh", "../scripts/init_apache2.sh"};
-    for(auto &script : basic_service)
+    for(auto &script : basicService)
     {
         int status = system(script.c_str());
         if (status == 0)
@@ -45,10 +48,8 @@ int main()
     }
 
     /* 加载用户应用 */
-    // 创建应用
-    std::vector<std::string> user_app = {"./device_control", "./pressure_test"};
-    std::map<pid_t, std::string> pid_list;
-    for(auto &script : user_app)
+    std::map<pid_t, std::string> pidList;
+    for(auto &script : userApp)
     {
         pid_t pid = fork();
         if (pid == 0)           // !子进程
@@ -58,7 +59,7 @@ int main()
         }
         else if (pid > 0)       // !父进程
         {
-            pid_list[pid] = script;
+            pidList[pid] = script;
         }
         else
         {
@@ -66,6 +67,7 @@ int main()
             exit(1);
         }
     }
+    
     // 循环监控
     while(true)
     {
@@ -79,25 +81,25 @@ int main()
         }
         else
         {
-            log_warning("守护进程收到异常关闭的子进程({},{})，稍后进行重启", pid, pid_list[pid]);
+            log_warning("守护进程收到异常关闭的子进程({},{})，稍后进行重启", pid, pidList[pid]);
             
             /* 查询子进程列表 */
-            auto iter = pid_list.find(pid);
-            if (iter != pid_list.end())
+            auto iter = pidList.find(pid);
+            if (iter != pidList.end())
             {
                 std::string script = iter->second;
-                pid_list.erase(pid);
+                pidList.erase(pid);
 
                 /* 创建新进程恢复应用 */
-                pid_t new_pid = fork();
-                if (new_pid == 0)           // !恢复的子进程
+                pid_t newPid = fork();
+                if (newPid == 0)           // !恢复的子进程
                 {
                     execl(script.c_str(), script.c_str(), NULL);
                     exit(0);
                 }
-                else if (new_pid > 0)       // !父进程
+                else if (newPid > 0)       // !父进程
                 {
-                    pid_list[new_pid] = script;
+                    pidList[newPid] = script;
                 }
                 else
                 {
@@ -116,7 +118,7 @@ int main()
 
     /* 注销日志模块             */
     log_critical("Exec Management Program End ...");
-    Logger::instance()->deinit();
+    Logger::Instance()->Deinit();
 
     return 0;
 }

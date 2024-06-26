@@ -15,7 +15,7 @@ BuildModuleLibrary(
 
     isLinkLocalLib                  TRUE
     linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-    linkLocalLibNameList            logger safecontainer
+    linkLocalLibNameList            logger
 
     isLink3rdPartyLib               TRUE
     link3rdPartyLibsDir             /usr/lib/x86_64-linux-gnu

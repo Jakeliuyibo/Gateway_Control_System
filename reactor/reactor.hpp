@@ -21,17 +21,13 @@ namespace reactor
         SINGLETON(Reactor);
 
         public:
-            void init(IniConfigParser *config);
-            static Reactor *instance()
-            {
-                static Reactor ins;
-                return &ins;
-            }
-            void push(DeviceEvent event);
-            void listen();
+            void Init(IniConfigParser *config);
+            void Push(DeviceEvent event);
+            void Listen();
+            
         private:
-            std::unique_ptr<Source> p_source;
-            std::unique_ptr<Processor> p_processor;
-            std::map<int, std::unique_ptr<CommDevice>> m_devicelist;
+            std::unique_ptr<Source> pSource_;
+            std::unique_ptr<Processor> pProcessor_;
+            std::map<int, std::unique_ptr<CommDevice>> deviceList_;
     };
 }

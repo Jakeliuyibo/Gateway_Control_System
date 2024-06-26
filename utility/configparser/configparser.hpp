@@ -11,76 +11,88 @@ namespace utility
 {
     class ConfigParser
     {
-        public:
-            ConfigParser() {}
-            ~ConfigParser() 
-            {
-                close();
-            }
-            // 读取配置文件
-            bool open(const std::string &filepath);
-            // 读取配置文件内容
-            bool read(std::string &content);
-            // 关闭配置文件流
-            void close();
-        private:
-            bool is_open();
-        private:
-            std::ifstream ifs;
+
+    public:
+        // 构造和析构
+        ConfigParser();
+        ~ConfigParser();
+
+    public:
+        // 读取配置文件
+        bool Open(const std::string& filePath);
+        // 读取配置文件内容
+        bool Read(std::string& content);
+        // 关闭配置文件流
+        void Close();
+        // 导入配置
+        [[nodiscard]] virtual bool Load(const std::string& filePath) = 0;
+
+    private:
+        // 是否打开文件
+        bool IsOpen();
+
+    private:
+        std::ifstream ifs_;
     };
 
     /**
      * @description: JSON配置文件解析器
      */
-    class JsonConfigParser : public ConfigParser
+    class JsonConfigParser : private ConfigParser
     {
-        public:
-            bool load(const std::string &filepath);
+    public:
+        // 导入配置
+        [[nodiscard]] virtual bool Load(const std::string& filePath) override;
 
-            template<typename T>
-            bool getValue(const std::string &key,T &value)
+        // 获取值
+        template<typename ValueType = std::string>
+        [[nodiscard]] bool GetValue(const std::string& key, ValueType& value)
+        {
+            try
             {
-                try
-                {
-                    value = pt.get<T>(key);
-                }
-                catch(const std::exception& e)
-                {
-                    log_error("JSON Parser can't parser key:{}" + key);
-                    return false;
-                }
-
-                return true;
+                value = pt_.get<ValueType>(key);
             }
-        private:
-            boost::property_tree::ptree pt;
+            catch (const std::exception& e)
+            {
+                log_error("JSON Parser can't parser key:{}", key);
+                return false;
+            }
+
+            return true;
+        }
+
+    private:
+        boost::property_tree::ptree pt_;
     };
 
     /**
      * @description: INI配置文件解析器
      */
-    class IniConfigParser : public ConfigParser
+    class IniConfigParser : private ConfigParser
     {
-        public:
-            bool load(const std::string &filepath);
+    public:
+        // 导入配置
+        [[nodiscard]] virtual bool Load(const std::string& filePath) override;
 
-            template<typename T>
-            bool getValue(const std::string &section, const std::string &key, T &value)
+        // 获取值
+        template<typename ValueType = std::string>
+        [[nodiscard]] bool GetValue(const std::string& section, const std::string& key, ValueType& value)
+        {
+            try
             {
-                try
-                {
-                    value = pt.get<T>(section + "." + key);
-                }
-                catch(const std::exception& e)
-                {
-                    log_error("INI Parser can't parser section:{},key:{}", section, key);
-                    return false;
-                }
-
-                return true;
+                value = pt_.get<ValueType>(section + "." + key);
             }
-        private:
-            boost::property_tree::ptree pt;
+            catch (const std::exception& e)
+            {
+                log_error("INI Parser can't parser section:{}, key:{}", section, key);
+                return false;
+            }
+
+            return true;
+        }
+
+    private:
+        boost::property_tree::ptree pt_;
     };
 
 };

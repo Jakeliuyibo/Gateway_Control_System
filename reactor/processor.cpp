@@ -9,8 +9,8 @@ Processor::Processor(IniConfigParser *parser)
     bool parserFlag = true;
 
     /* 解析参数 */
-    int num_works = 1; 
-    parserFlag &= parser->getValue<int>("PROCESSOR", "PROCESSOR_NUMTHREAD", num_works);
+    int numWorks = 1; 
+    parserFlag &= parser->GetValue<int>("PROCESSOR", "PROCESSOR_NUMTHREAD", numWorks);
 
     if(!parserFlag)
     {
@@ -19,7 +19,7 @@ Processor::Processor(IniConfigParser *parser)
     }
 
     /* 创建线程池 */
-    p_pool = std::make_unique<ThreadPool>(num_works);
+    pool_ = std::make_unique<ThreadPool>(numWorks);
 }
 
 
@@ -28,7 +28,7 @@ Processor::~Processor()
     log_info("reactor-processor module done ...");
 }
 
-void Processor::shutdown()
+void Processor::Shutdown()
 {
-    p_pool->shutdown();
+    pool_->Shutdown();
 }

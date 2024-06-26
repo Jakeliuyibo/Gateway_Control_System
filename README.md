@@ -71,3 +71,16 @@ Gateway_Control_System
 ├─ 📄CMakeLists.txt
 └─ 📄README.md
 ```
+
+## 命名规范
+```
+全大写：宏定义
+全小写：文件名、命名空间(namespace)
+大驼峰：类名、结构体名、类成员函数、普通函数、枚举、类型名(typedef, using)
+小驼峰：全局变量、局部变量
+其他：
+  a、类成员变量：小驼峰+后缀下划线'_'。例如：int a_ = 0;
+  b、指针等局部变量：前缀"p"+小驼峰。例如：int *pCnt = nullptr;
+  c、常量、静态等局部变量：前缀"k"+小驼峰。例如：const int kCnt = 0; static int kCnt = 0;
+  d、条件变量：前缀"is/has"+小驼峰。例如：bool isRecvAck = false;
+```

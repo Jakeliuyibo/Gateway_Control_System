@@ -5,58 +5,61 @@
 
 using namespace utility;
 
-
-bool Logger::init(  const std::string &filepath,
-                    const WorkStream work_stream,
-                    const WorkMode work_mode,
-                    const WorkLevel work_level,
-                    const WorkLevel level_console,
-                    const WorkLevel level_file
-            )
+/*************************************************************************
+ *
+ * Public Function
+ *
+ *************************************************************************/
+bool Logger::Init(
+    const std::string& filePath,
+    const WorkStream stream, const WorkMode mode,
+    const WorkLevel level, const WorkLevel levelConsole, const WorkLevel levelFile
+)
 {
     try
     {
-        std::vector<spdlog::sink_ptr> vecSink;
+        std::vector<spdlog::sink_ptr> sinks;
 
         /* 输出到控制台 */
-        if (work_stream & STREAM_CONSOLE)
+        if (stream == WorkStream::CONSOLE || stream == WorkStream::BOTH)
         {
-            auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-            const char * console_format = "[%^%l%$] %v";
-            console_sink->set_pattern(console_format);
-            console_sink->set_level((spdlog::level::level_enum)level_console);
-            vecSink.emplace_back(console_sink);
+            auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+            consoleSink->set_pattern(kConsoleFormat);
+            consoleSink->set_level(static_cast<spdlog::level::level_enum>(static_cast<std::underlying_type<WorkLevel>::type>(levelConsole)));
+            sinks.emplace_back(std::move(consoleSink));
         }
 
         /* 输出到文件 */
-        if (work_stream & STREAM_FILE)
+        if (stream == WorkStream::FILE || stream == WorkStream::BOTH)
         {
-            // auto file_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filepath, 10 * 1024 * 1024, 5);
-            auto file_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(filepath, 23, 59);
-            const char * file_format = "[%Y-%m-%d %T.%e] <pid %P:%t> [%^%l%$] [%s:%!:%#] %v";
-            // const char * file_format = "[%Y-%m-%d %T.%e] [%^%l%$] %v";
-            file_sink->set_pattern(file_format);
-            file_sink->set_level((spdlog::level::level_enum)level_file);
-            vecSink.emplace_back(file_sink);
+            // auto fileSink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filePath, 10 * 1024 * 1024, 5);
+            auto fileSink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(filePath, 23, 59);
+            fileSink->set_pattern(kFileFormat);
+            fileSink->set_level(static_cast<spdlog::level::level_enum>(static_cast<std::underlying_type<WorkLevel>::type>(levelFile)));
+            sinks.emplace_back(fileSink);
         }
 
         /* 设置同步异步 */
-        if (work_mode & MODE_SYNC)
+        std::shared_ptr<spdlog::logger> pLogger;
+        if (mode == WorkMode::SYNC)
         {
-            m_pLogger = std::make_shared<spdlog::logger>(LOGGER_NAME, begin(vecSink), end(vecSink));
+            pLogger = std::make_shared<spdlog::logger>(LOGGER_NAME, begin(sinks), end(sinks));
         }
-        else if (work_mode & MODE_ASYNC)
+        else if (mode == WorkMode::ASYNC)
         {
             // 创建队列大小10000，线程为1的工作线程池
-            spdlog::init_thread_pool(10000, 1);
+            spdlog::init_thread_pool(kWorkQueueSize, kWorkThreadCount);
             auto tp = spdlog::thread_pool();
-            m_pLogger = std::make_shared<spdlog::async_logger>(LOGGER_NAME, begin(vecSink), end(vecSink), tp, spdlog::async_overflow_policy::block);
-            // spdlog::flush_every(std::chrono::seconds(1));
+            pLogger = std::make_shared<spdlog::async_logger>(LOGGER_NAME, begin(sinks), end(sinks), tp, spdlog::async_overflow_policy::block);
         }
-        m_pLogger->set_level((spdlog::level::level_enum)work_level);
-		spdlog::register_logger(m_pLogger);
+
+        /* 设置屏蔽等级 */
+        pLogger->set_level(static_cast<spdlog::level::level_enum>(static_cast<std::underlying_type<WorkLevel>::type>(level)));
+
+        /* 注册日志 */
+        spdlog::register_logger(pLogger);
     }
-    catch(const spdlog::spdlog_ex& ex)
+    catch (const spdlog::spdlog_ex& ex)
     {
         std::cout << "Failed to init Logger module, " << ex.what() << std::endl;
         return false;
@@ -65,10 +68,8 @@ bool Logger::init(  const std::string &filepath,
     return true;
 }
 
-
-
-void Logger::deinit()
+void Logger::Deinit()
 {
-	spdlog::drop_all();
-	spdlog::shutdown();
+    spdlog::drop_all();
+    spdlog::shutdown();
 }

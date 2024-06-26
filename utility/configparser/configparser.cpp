@@ -7,28 +7,38 @@
 #include "boost/property_tree/json_parser.hpp"
 
 using namespace utility;
-using namespace boost::property_tree;
 
 /**********************************************************************************
  *************************    ConfigParser    *************************************
  **********************************************************************************/
-bool ConfigParser::open(const std::string &filepath)
+ConfigParser::ConfigParser()
+{
+
+}
+
+ConfigParser::~ConfigParser()
+{
+    Close();
+}
+
+bool ConfigParser::Open(const std::string& filePath)
 {
     /* 检测文件是否存在 */
-    ifs.open(filepath);
-    if(!is_open())
+    ifs_.open(filePath);
+    if (!IsOpen())
     {
-        log_error("Can't open json file {}", filepath);
+        log_error("Can't open json file ");
+        log_error("Can't open json file {}", filePath);
         return false;
     }
 
     return true;
 }
 
-bool ConfigParser::read(std::string &content)
+bool ConfigParser::Read(std::string& content)
 {
     /* 打开文件 */
-    if(!is_open())
+    if (!IsOpen())
     {
         log_error("Can't read ConfigFile's data");
         return false;
@@ -36,83 +46,82 @@ bool ConfigParser::read(std::string &content)
 
     /* 读取文件内容 */
     std::stringstream buf;
-    buf << ifs.rdbuf();
+    buf << ifs_.rdbuf();
     content = buf.str();
 
     return true;
 }
 
-void ConfigParser::close()
+void ConfigParser::Close()
 {
-    if(is_open())
+    if (IsOpen())
     {
         /* 关闭文件 */
-        ifs.close();
+        ifs_.close();
     }
 }
 
-bool ConfigParser::is_open()
+bool ConfigParser::IsOpen()
 {
-    return ifs.is_open();
+    return ifs_.is_open();
 }
 
 /**********************************************************************************
  *************************    JsonConfigParser    *********************************
  **********************************************************************************/
-bool JsonConfigParser::load(const std::string &filepath)
+bool JsonConfigParser::Load(const std::string& filePath)
 {
     /* 打开文件 */
-    if(!open(filepath))
+    if (!Open(filePath))
     {
-        log_error("Can't load json file {}", filepath);
+        log_error("Can't load json file {}", filePath);
         return false;
     }
 
     /* 解析json文件 */
     try
     {
-        read_json(filepath, pt);
+        boost::property_tree::read_json(filePath, pt_);
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
-        log_error("Can't parser json file {}", filepath);
-        close();
+        log_error("Can't parser json file {}", filePath);
+        Close();
         return false;
     }
 
     /* 关闭文件 */
-    close();
+    Close();
 
     return true;
-
 }
 
 /**********************************************************************************
  *************************    IniConfigParser    **********************************
  **********************************************************************************/
-bool IniConfigParser::load(const std::string &filepath)
+bool IniConfigParser::Load(const std::string& filePath)
 {
     /* 打开文件 */
-    if(!open(filepath))
+    if (!Open(filePath))
     {
-        log_error("Can't load ini file {}", filepath);
+        log_error("Can't load ini file {}", filePath);
         return false;
     }
 
     /* 解析ini文件 */
     try
     {
-        read_ini(filepath, pt);
+        boost::property_tree::read_ini(filePath, pt_);
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
-        log_error("Can't parser ini file {}", filepath);
-        close();
+        log_error("Can't parser ini file {}", filePath);
+        Close();
         return false;
     }
 
     /* 关闭文件 */
-    close();
+    Close();
 
     return true;
 }

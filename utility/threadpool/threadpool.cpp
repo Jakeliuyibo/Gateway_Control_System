@@ -2,13 +2,17 @@
 
 using namespace utility;
 
-// 构造函数
+/*************************************************************************
+ *
+ * Public Function
+ *
+ *************************************************************************/
 ThreadPool::ThreadPool(int numThreads) 
-    : f_shutdown(false) 
+    : shutdown_(false) 
 {
     for(int idx = 0; idx < numThreads; idx++)
     {
-        m_threadpool.emplace_back(
+        threadPool_.emplace_back(
             [this]
             {
                 for(;;)
@@ -16,19 +20,19 @@ ThreadPool::ThreadPool(int numThreads)
                     Task task;
                     {
                         // 加锁并等待通知
-                        std::unique_lock<std::mutex> lock(this->m_lock);
-                        this->m_cond.wait(lock, 
-                            [this]() {return this->f_shutdown || !this->m_taskqueue.empty(); });
+                        std::unique_lock<std::mutex> lock(this->lock_);
+                        this->cond_.wait(lock, 
+                            [this]() {return this->shutdown_ || !this->taskQueue_.empty(); });
 
                         // 检测线程池是否终止并且任务队列全部执行完成
-                        if(this->f_shutdown && this->m_taskqueue.empty())
+                        if(this->shutdown_ && this->taskQueue_.empty())
                         {
                             return;
                         }
 
                         // 取任务
-                        task = std::move(this->m_taskqueue.front());
-                        this->m_taskqueue.pop();
+                        task = std::move(this->taskQueue_.front());
+                        this->taskQueue_.pop();
                     }
 
                     // 执行任务
@@ -39,26 +43,24 @@ ThreadPool::ThreadPool(int numThreads)
     }
 }
 
-// 析构
 ThreadPool::~ThreadPool() 
 {
-    if(!f_shutdown)
+    if(!shutdown_)
     {
-        shutdown();
+        Shutdown();
     }
 }
 
-// 关闭线程池
-void ThreadPool::shutdown()
+void ThreadPool::Shutdown()
 {
     // 设置终止标志位
-    f_shutdown = true;
+    shutdown_ = true;
 
     // 通知线程池中线程解锁结束
-    m_cond.notify_all();
+    cond_.notify_all();
 
     // 等待线程池执行完成
-    for(auto &th : m_threadpool)
+    for(auto &th : threadPool_)
     {
         if(th.joinable())
         {
