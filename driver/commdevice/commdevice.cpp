@@ -35,7 +35,7 @@ int addNoise(int originalValue)
 CommDevice::HandleEventRetType CommDevice::HandleEvent(DeviceEvent event)
 {
     HandleEventRetType ret(true);
-    FileTransfer::FtRetType ft_ret(true);
+    FileTransfer::FtRetType ftRet(true);
 
     ret.schedTime_ = GetSystimeUs();
 
@@ -62,14 +62,14 @@ CommDevice::HandleEventRetType CommDevice::HandleEvent(DeviceEvent event)
             
             std::this_thread::sleep_for(std::chrono::microseconds(addNoise(correctedDelayUs_)));
             log_info("通信设备({}:{})传输文件", devId_, devIdentify_);
-            ft_ret              = pFileTransfer_->Transfer(event.action_);
-            ret.status_         = ft_ret.status_;
-            ret.transBytes_     = ft_ret.transBytes_;
-            ret.recvBytes_      = ft_ret.recvBytes_;
-            ret.fileFullPath_   = ft_ret.fileFullPath_;
-            ret.filePath_       = ft_ret.filePath_;
-            ret.fileName_       = ft_ret.fileName_;
-            ret.fileSize_       = ft_ret.fileSize_;
+            ftRet              = pFileTransfer_->Transfer(event.action_);
+            ret.status_         = ftRet.status_;
+            ret.transBytes_     = ftRet.transBytes_;
+            ret.recvBytes_      = ftRet.recvBytes_;
+            ret.fileFullPath_   = ftRet.fileFullPath_;
+            ret.filePath_       = ftRet.filePath_;
+            ret.fileName_       = ftRet.fileName_;
+            ret.fileSize_       = ftRet.fileSize_;
             break;
 
         case DeviceEvent::EventType::READ:            /* 读取文件        */
@@ -81,14 +81,14 @@ CommDevice::HandleEventRetType CommDevice::HandleEvent(DeviceEvent event)
 
             std::this_thread::sleep_for(std::chrono::microseconds(addNoise(correctedDelayUs_)));
             log_info("通信设备({}:{})读取文件", devId_, devIdentify_);
-            ft_ret              = pFileTransfer_->Receive(storagePath_, storageExtentPrefix_, GetSystimeByFilenameFormat());
-            ret.status_         = ft_ret.status_;
-            ret.transBytes_     = ft_ret.transBytes_;
-            ret.recvBytes_      = ft_ret.recvBytes_;
-            ret.fileFullPath_   = ft_ret.fileFullPath_;
-            ret.filePath_       = ft_ret.filePath_;
-            ret.fileName_       = ft_ret.fileName_;
-            ret.fileSize_       = ft_ret.fileSize_;
+            ftRet              = pFileTransfer_->Receive(storagePath_, storageExtentPrefix_, GetSystimeByFilenameFormat());
+            ret.status_         = ftRet.status_;
+            ret.transBytes_     = ftRet.transBytes_;
+            ret.recvBytes_      = ftRet.recvBytes_;
+            ret.fileFullPath_   = ftRet.fileFullPath_;
+            ret.filePath_       = ftRet.filePath_;
+            ret.fileName_       = ftRet.fileName_;
+            ret.fileSize_       = ftRet.fileSize_;
             break;
 
         case DeviceEvent::EventType::CLOSE:          /* 关闭文件传输对象  */

@@ -66,7 +66,7 @@ namespace reactor
             DeviceEvent() {}
             DeviceEvent(int id, EventType type, 
                         int device, std::string action, 
-                        std::string m_status, std::string m_other);
+                        std::string status, std::string other);
             ~DeviceEvent(){}
 
             // 解析

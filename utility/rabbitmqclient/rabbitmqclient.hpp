@@ -55,12 +55,12 @@ namespace utility
     class CMessage
     {
     public:
-        CMessage(const std::string& data, bool mandatory = true, bool immediate = false, bool is_durable = true) :
+        CMessage(const std::string& data, bool mandatory = true, bool immediate = false, bool isDurable = true) :
             data_(data),
             mandatory_(mandatory),
             immediate_(immediate)
         {
-            if (is_durable)
+            if (isDurable)
             {
                 properties_._flags |= AMQP_BASIC_DELIVERY_MODE_FLAG;
                 properties_.delivery_mode = AMQP_DELIVERY_PERSISTENT;
@@ -77,7 +77,7 @@ namespace utility
     class RabbitMqClient
     {
     public:
-        RabbitMqClient(const std::string& hostname, int port, const std::string& user = "guest", const std::string& password = "guest");
+        RabbitMqClient(const std::string& hostName, int port, const std::string& user = "guest", const std::string& password = "guest");
         ~RabbitMqClient();
 
     public:
@@ -90,18 +90,18 @@ namespace utility
         // 初始化队列
         int DeclareQueue(CQueue& queue);
         // 将指定队列绑定到交换机上
-        int BindQueueToExchange(const std::string& queue, const std::string& exchange, const std::string& bindkey);
+        int BindQueueToExchange(const std::string& queue, const std::string& exchange, const std::string& bindKey);
         // 取消队列到交换机的绑定
-        int UnbingQueueToExchange(CQueue& queue, CExchange& exchange, const std::string& bindkey);
+        int UnbingQueueToExchange(CQueue& queue, CExchange& exchange, const std::string& bindKey);
         // 发布消息
-        int Publish(const std::string& exchange_name, const std::string& routing_key_name, const CMessage& message);
+        int Publish(const std::string& exchangeName, const std::string& routingKeyName, const CMessage& message);
 
         // 底层基于get方式，主动向服务器拉取
-        std::string Get(const std::string& queue_name, bool no_ack = true);
-        std::vector<std::string> Get(const std::string& queue_name, int num, bool no_ack = true);
+        std::string Get(const std::string& queueName, bool noAck = true);
+        std::vector<std::string> Get(const std::string& queueName, int num, bool noAck = true);
 
         // 底层基于consume方式，由服务器主动推送
-        void ConsumeListen(const std::string& queue_name, struct timeval* timeout = nullptr, bool no_ack = true);
+        void ConsumeListen(const std::string& queueName, struct timeval* timeout = nullptr, bool noAck = true);
         bool Consume(std::string& msg, bool block = true);
 
     private:

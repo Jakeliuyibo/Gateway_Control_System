@@ -12,8 +12,8 @@ using namespace utility;
  /**
   * @description: 构造函数
   */
-RabbitMqClient::RabbitMqClient(const std::string& hostname, int port, const std::string& user, const std::string& password)
-    : hostName_(hostname),
+RabbitMqClient::RabbitMqClient(const std::string& hostName, int port, const std::string& user, const std::string& password)
+    : hostName_(hostName),
     port_(port),
     userName_(user),
     password_(password),
@@ -51,15 +51,15 @@ int RabbitMqClient::Connect()
     }
 
     /* 2、创建socket */
-    amqp_socket_t* m_socket = amqp_tcp_socket_new(conn_);
-    if (m_socket == nullptr)
+    amqp_socket_t* sock = amqp_tcp_socket_new(conn_);
+    if (sock == nullptr)
     {
         log_error("RabbitMqClient分配网络端口失败");
         return -3;
     }
 
     /* 3、绑定主机地址和端口，建立与服务器连接 */
-    int isOpenSocket = amqp_socket_open(m_socket, hostName_.c_str(), port_);
+    int isOpenSocket = amqp_socket_open(sock, hostName_.c_str(), port_);
     if (isOpenSocket < 0)
     {
         log_error("RabbitMqClient绑定ip和端口失败");
@@ -175,13 +175,13 @@ int RabbitMqClient::DeclareQueue(CQueue& queue)
 /**
  * @description: 将指定队列绑定到交换机上，在direct模式下bindkey可以为队列名称
  */
-int RabbitMqClient::BindQueueToExchange(const std::string& queue, const std::string& exchange, const std::string& bindkey)
+int RabbitMqClient::BindQueueToExchange(const std::string& queue, const std::string& exchange, const std::string& bindKey)
 {
     amqp_queue_bind(conn_,
         channel_,
         amqp_cstring_bytes(queue.c_str()),
         amqp_cstring_bytes(exchange.c_str()),
-        amqp_cstring_bytes(bindkey.c_str()),
+        amqp_cstring_bytes(bindKey.c_str()),
         amqp_empty_table);
 
     return ErrorMsg(amqp_get_rpc_reply(conn_), "绑定队列到交换机");
@@ -190,12 +190,12 @@ int RabbitMqClient::BindQueueToExchange(const std::string& queue, const std::str
 /**
  * @description: 发布消息
  */
-int RabbitMqClient::Publish(const std::string& exchange_name, const std::string& routing_key_name, const CMessage& message)
+int RabbitMqClient::Publish(const std::string& exchangeName, const std::string& routingKeyName, const CMessage& message)
 {
     int ret = amqp_basic_publish(conn_,
         channel_,
-        amqp_cstring_bytes(exchange_name.c_str()),
-        amqp_cstring_bytes(routing_key_name.c_str()),
+        amqp_cstring_bytes(exchangeName.c_str()),
+        amqp_cstring_bytes(routingKeyName.c_str()),
         message.mandatory_,
         message.immediate_,
         &message.properties_,
@@ -213,32 +213,32 @@ int RabbitMqClient::Publish(const std::string& exchange_name, const std::string&
 /**
  * @description: 非阻塞方式消费，底层以amqp的get和read方法实现，每次主动向服务器拉取一条消息
  */
-std::string RabbitMqClient::Get(const std::string& queue_name, bool no_ack)
+std::string RabbitMqClient::Get(const std::string& queueName, bool noAck)
 {
-    std::vector<std::string> vec_msg = Get(queue_name, 1, no_ack);
+    std::vector<std::string> vecMsg = Get(queueName, 1, noAck);
 
-    if (vec_msg.size() != 1)
+    if (vecMsg.size() != 1)
     {
         log_warning("尝试以非阻塞读取一条消息,但是获得了NULL或多个");
         return "";
     }
 
-    return vec_msg[0];
+    return vecMsg[0];
 }
 
-std::vector<std::string> RabbitMqClient::Get(const std::string& queue_name, int num, bool no_ack)
+std::vector<std::string> RabbitMqClient::Get(const std::string& queueName, int num, bool noAck)
 {
-    std::vector<std::string> ret_msg;
+    std::vector<std::string> retMsg;
 
     while (num--)
     {
         /*  1、阻塞同步轮询服务器中队列 */
-        amqp_rpc_reply_t replyGet = amqp_basic_get(conn_, channel_, amqp_cstring_bytes(queue_name.c_str()), no_ack);
+        amqp_rpc_reply_t replyGet = amqp_basic_get(conn_, channel_, amqp_cstring_bytes(queueName.c_str()), noAck);
         int retGetMsg = ErrorMsg(replyGet, "Get message");
         if (retGetMsg < 0)
         {
             log_error("Failed to get message from RabbitMQ server");
-            return ret_msg;
+            return retMsg;
         }
         // 获取队列中存在多少条消息
         amqp_basic_get_ok_t* tip;
@@ -250,41 +250,41 @@ std::vector<std::string> RabbitMqClient::Get(const std::string& queue_name, int 
                 break;
             case AMQP_BASIC_GET_EMPTY_METHOD:
                 log_info("no message in rabbitmq queue");
-                return ret_msg;
+                return retMsg;
             default:
                 log_error("get error rabbitmq reply id %d", replyGet.reply.id);
-                return ret_msg;
+                return retMsg;
         }
 
         /* 2、读取chennal上的一条消息 */
-        amqp_message_t amqp_msg;
-        int retReadMsg = ErrorMsg(amqp_read_message(conn_, channel_, &amqp_msg, false), "Read message");
+        amqp_message_t amqpMsg;
+        int retReadMsg = ErrorMsg(amqp_read_message(conn_, channel_, &amqpMsg, false), "Read message");
         if (retReadMsg < 0)
         {
             log_error("Failed to read rabbitmq message");
-            return ret_msg;
+            return retMsg;
         }
 
         /* 3、封装消息 */
-        ret_msg.emplace_back(std::string(( char* ) amqp_msg.body.bytes, ( char* ) amqp_msg.body.bytes + amqp_msg.body.len));
+        retMsg.emplace_back(std::string(( char* ) amqpMsg.body.bytes, ( char* ) amqpMsg.body.bytes + amqpMsg.body.len));
 
         /* 4、应答ACK */
-        if (no_ack == false)
+        if (noAck == false)
         {
             amqp_basic_ack(conn_, channel_, tip->delivery_tag, false);
         }
     }
 
-    return ret_msg;
+    return retMsg;
 }
 
 /**
  * @description: 阻塞方式消费，底层为consume实现，本地被动一次性拉取服务器所有消息，依次由客户端消费
  */
-void RabbitMqClient::ConsumeListen(const std::string& queue_name, struct timeval* timeout, bool no_ack)
+void RabbitMqClient::ConsumeListen(const std::string& queueName, struct timeval* timeout, bool noAck)
 {
     std::thread(
-        [this, queue_name, timeout, no_ack]()
+        [this, queueName, timeout, noAck]()
         {
             try
             {
@@ -303,10 +303,10 @@ void RabbitMqClient::ConsumeListen(const std::string& queue_name, struct timeval
                 /* 2、创建消费者 */
                 amqp_basic_consume_ok_t* retBasicConsume = amqp_basic_consume(conn_,
                     channel_,
-                    amqp_cstring_bytes(queue_name.c_str()),
+                    amqp_cstring_bytes(queueName.c_str()),
                     amqp_empty_bytes,
                     false,  // no_local 0:接收 1:不接收
-                    no_ack, // no_ack 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
+                    noAck, // noAck 是否需要ack才将该消息从队列删除 0:需要调用amqp_basic_ack后才会清除 1:不回复
                     false,  // exclusive 0:不独占 1:当前连接不在时队列自动删除
                     amqp_empty_table);
                 if (!retBasicConsume)
@@ -332,7 +332,7 @@ void RabbitMqClient::ConsumeListen(const std::string& queue_name, struct timeval
                     store_.Enqueue(std::string(( char* ) envelope.message.body.bytes, ( char* ) envelope.message.body.bytes + envelope.message.body.len));
 
                     /* 5、应答ACK */
-                    if (no_ack == false)
+                    if (noAck == false)
                     {
                         amqp_basic_ack(conn_, channel_, envelope.delivery_tag, false);
                     }

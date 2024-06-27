@@ -471,24 +471,24 @@ void SerialFileTransfer::HandleProtocolPackage(ProtocolPackage &package)
                 throw std::runtime_error("未知fileId");
             }
 
-            auto &file_desc = serverFileManagement_[fileId];
-            if (tunkId >= file_desc.tunkSize_)
+            auto &fileDesc = serverFileManagement_[fileId];
+            if (tunkId >= fileDesc.tunkSize_)
             {
                 throw std::runtime_error("未知的tunkId");
             }
 
-            std::map<std::size_t, std::string> &tunk_mp = file_desc.tunkData_;
-            if (tunk_mp.find(tunkId) != tunk_mp.end())
+            std::map<std::size_t, std::string> &tunkMap = fileDesc.tunkData_;
+            if (tunkMap.find(tunkId) != tunkMap.end())
             {
                 throw std::runtime_error("重复的tunkId");
             }
 
             /* 将块数据存入文件管理 */
-            file_desc.recvTime_ = std::chrono::system_clock::now();
-            tunk_mp[tunkId] = tunkData; 
+            fileDesc.recvTime_ = std::chrono::system_clock::now();
+            tunkMap[tunkId] = tunkData; 
 
             /* 判断块数据是否收集完成 */
-            if (tunk_mp.size() == file_desc.tunkSize_)
+            if (tunkMap.size() == fileDesc.tunkSize_)
             {
                 /* 发送ACK */
                 SerialFileTransfer::WriteBytes(ProtocolCmd::ACK, IdFormatTransfomer(fileId));

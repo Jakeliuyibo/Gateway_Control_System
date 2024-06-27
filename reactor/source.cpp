@@ -91,7 +91,6 @@ std::string Source::PopIn()
 
     {
         std::unique_lock<std::mutex> rli(rlockIn_);
-        // msg = p_rabbitmqclient->get(queueNameIn_, true);
         rabbitmqClientIn_->Consume(msg, true);
     }
 

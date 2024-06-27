@@ -28,72 +28,45 @@ int main()
     std::string rabbitmqHostName, rabbitmqUser, rabbitmqPassword, exchangeNameIn, queueNameIn, routingKeyIn;
     int rabbitmqPort; 
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_HOSTNAME"         , rabbitmqHostName);
-    parserFlag &= config.GetValue<int        >("RABBITMQ", "rabbitmqPort"             , rabbitmqPort);
+    parserFlag &= config.GetValue<int        >("RABBITMQ", "RABBITMQ_PORT"             , rabbitmqPort);
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_USER"             , rabbitmqUser);
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_PASSWORD"         , rabbitmqPassword);
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_EXCHANGENAME_IN"  , exchangeNameIn);
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_QUEUENAME_IN"     , queueNameIn);
     parserFlag &= config.GetValue<std::string>("RABBITMQ", "RABBITMQ_ROUTINGKEY_IN"    , routingKeyIn);
 
-    std::unique_ptr<RabbitMqClient> p_rabbitmqclient = std::make_unique<RabbitMqClient>(rabbitmqHostName, rabbitmqPort, rabbitmqUser, rabbitmqPassword);
-    p_rabbitmqclient->Connect();
+    std::unique_ptr<RabbitMqClient> pRabbitmqclient = std::make_unique<RabbitMqClient>(rabbitmqHostName, rabbitmqPort, rabbitmqUser, rabbitmqPassword);
+    pRabbitmqclient->Connect();
 
-    sleep(1);
+    #define PUBLISH_EVENT(event) do{ \
+        pRabbitmqclient->Publish(exchangeNameIn, routingKeyIn, event.Serial()); \
+    } while (0)
 
     /* 初始化设备 */
-    DeviceEvent o101_1(1, DeviceEvent::EventType::OPEN , 1, "", "", "");
-    DeviceEvent o100_1(1, DeviceEvent::EventType::OPEN , 5, "", "", "");
-    p_rabbitmqclient->Publish(exchangeNameIn, routingKeyIn, o101_1.Serial());
-    p_rabbitmqclient->Publish(exchangeNameIn, routingKeyIn, o100_1.Serial());
-    // DeviceEvent r1(1, DeviceEvent::EVENT_OPEN , 2, "", "", "");
-    // DeviceEvent u1(1, DeviceEvent::EVENT_OPEN , 3, "", "", "");
-    // DeviceEvent s1(1, DeviceEvent::EVENT_OPEN , 4, "", "", "");
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, o1.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, r1.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u1.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s1.serial());
+    DeviceEvent evOpenDev1(1, DeviceEvent::EventType::OPEN , 1, "", "", "");
+    DeviceEvent evOpenDev4(1, DeviceEvent::EventType::OPEN , 4, "", "", "");
+    DeviceEvent evOpenDev5(1, DeviceEvent::EventType::OPEN , 5, "", "", "");
+    DeviceEvent evOpenDev8(1, DeviceEvent::EventType::OPEN , 8, "", "", "");
+    PUBLISH_EVENT(evOpenDev1);
+    PUBLISH_EVENT(evOpenDev4);
+    PUBLISH_EVENT(evOpenDev5);
+    PUBLISH_EVENT(evOpenDev8);
     sleep(1);
 
-    // DeviceEvent o2(2, DeviceEvent::EVENT_WRITE, 1, "/home/Gateway_Management_System/storage/upload/test.txt", "", "");
-    // DeviceEvent r2(2, DeviceEvent::EVENT_WRITE, 2, "/home/Gateway_Management_System/storage/upload//test1.txt", "", "");
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, o2.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, r2.serial());
-    DeviceEvent o101_2(2, DeviceEvent::EventType::WRITE, 1, "/home/Gateway_Management_System/storage/upload/test.txt", "", "");
-    p_rabbitmqclient->Publish(exchangeNameIn, routingKeyIn, o101_2.Serial());
+    DeviceEvent evWriteDev1(2, DeviceEvent::EventType::WRITE, 1, "/home/Gateway_Control_System/storage/test.txt", "", "");
+    DeviceEvent evWriteDev4(2, DeviceEvent::EventType::WRITE, 4, "/home/Gateway_Control_System/storage/test.txt", "", "");
+    PUBLISH_EVENT(evWriteDev1);
+    PUBLISH_EVENT(evWriteDev4);
     sleep(3);
 
-    // DeviceEvent u2(2, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test1.txt", "", "");
-    // DeviceEvent u3(3, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test2.txt", "", "");
-    // DeviceEvent u4(4, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test3.txt", "", "");
-    // DeviceEvent u5(5, DeviceEvent::EVENT_WRITE, 3, "/home/Gateway_Control_System/storage/test4.txt", "", "");
-    // DeviceEvent s2(2, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test1.txt", "", "");
-    // DeviceEvent s3(3, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test2.txt", "", "");
-    // DeviceEvent s4(4, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test3.txt", "", "");
-    // DeviceEvent s5(5, DeviceEvent::EVENT_WRITE, 4, "/home/Gateway_Control_System/storage/test4.txt", "", "");
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u2.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u3.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u4.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u5.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s2.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s3.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s4.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s5.serial());
-    // sleep(10);
-
-    // DeviceEvent o9(9, DeviceEvent::EVENT_CLOSE , 1, "", "", "");
-    // DeviceEvent r9(9, DeviceEvent::EVENT_CLOSE , 2, "", "", "");
-    // DeviceEvent u9(9, DeviceEvent::EVENT_CLOSE , 3, "", "", "");
-    // DeviceEvent s9(9, DeviceEvent::EVENT_CLOSE , 4, "", "", "");
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, o9.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, r9.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, u9.serial());
-    // p_rabbitmqclient->publish(exchangeNameIn, routingKeyIn, s9.serial());
-    DeviceEvent o101_9(9, DeviceEvent::EventType::CLOSE , 1, "", "", "");
-    DeviceEvent o100_9(9, DeviceEvent::EventType::CLOSE , 5, "", "", "");
-    p_rabbitmqclient->Publish(exchangeNameIn, routingKeyIn, o101_9.Serial());
-    p_rabbitmqclient->Publish(exchangeNameIn, routingKeyIn, o100_9.Serial());
-
-    
+    DeviceEvent evCloseDev1(9, DeviceEvent::EventType::CLOSE , 1, "", "", "");
+    DeviceEvent evCloseDev4(9, DeviceEvent::EventType::CLOSE , 4, "", "", "");
+    DeviceEvent evCloseDev5(9, DeviceEvent::EventType::CLOSE , 5, "", "", "");
+    DeviceEvent evCloseDev8(9, DeviceEvent::EventType::CLOSE , 8, "", "", "");
+    PUBLISH_EVENT(evCloseDev1);
+    PUBLISH_EVENT(evCloseDev4);
+    PUBLISH_EVENT(evCloseDev5);
+    PUBLISH_EVENT(evCloseDev8);
     sleep(1000);
 
     /* 注销日志模块             */
