@@ -65,7 +65,7 @@ void Source::PushIn(std::string msg)
     CMessage message(msg);
 
     {
-        std::unique_lock<std::mutex> wlock(wlockIn_);
+        std::unique_lock<std::mutex> wli(wlockIn_);
         rabbitmqClientIn_->Publish(exchangeNameIn_, routingKeyIn_, message);
     }
 

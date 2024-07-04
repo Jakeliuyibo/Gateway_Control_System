@@ -6,10 +6,10 @@
 
 #include "systime.hpp"
 
-using namespace utility;
-
+namespace utility
+{
 // 获取系统时间
-std::string utility::GetSystime()
+std::string GetSystime()
 {
     time_t ticks = time(NULL);
     struct tm *pTm = localtime(&ticks);
@@ -19,7 +19,7 @@ std::string utility::GetSystime()
     return timeStamp;
 }
 
-std::string utility::GetSystimeUs()
+std::string GetSystimeUs()
 {
     auto now = std::chrono::system_clock::now();
     std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
@@ -36,7 +36,7 @@ std::string utility::GetSystimeUs()
 }
 
 // 获取系统时间，文件名格式
-std::string utility::GetSystimeByFilenameFormat()
+std::string GetSystimeByFilenameFormat()
 {
     time_t ticks = time(NULL);
     struct tm *pTm = localtime(&ticks);
@@ -45,3 +45,6 @@ std::string utility::GetSystimeByFilenameFormat()
     strftime(timeStamp, sizeof(timeStamp), "%Y_%m_%d_%H_%M_%S", pTm);
     return timeStamp;
 }
+};
+
+

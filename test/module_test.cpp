@@ -12,6 +12,7 @@
 #include "systime.hpp"
 #include "singleton.hpp"
 #include "threadpool.hpp"
+#include "filemanagement.hpp"
 #include "source.hpp"
 
 using namespace std;
@@ -149,6 +150,35 @@ TEST(MODULE, RABBITMQCLIENT)
     src.PushIn("abc");
     EXPECT_EQ(src.PopIn(), "abc");
 }
+
+TEST(MODULE, DIR_OPERATION)
+{
+    std::cout << "路径拼接 result = " << SplicingDirWithAppend({"/home", "lyb", "123.txt"}) << std::endl;
+    std::cout << "路径拼接 result = " << SplicingDirWithConcat({"/home", "lyb", "123.txt"}) << std::endl;
+    std::cout << "当前路径 result = " << GetCurrentDirName() << std::endl;
+
+    std::string dir = "/home/lyb/123.txt";
+    std::cout << "路径名 result = " << GetParentDirName(dir) << std::endl;
+    std::cout << "文件名 result = " << GetFileName(dir) << std::endl;
+    std::cout << "扩展名 result = " << GetFileExtensionName(dir) << std::endl;
+    std::cout << "修改扩展名 result = " << ModifyFileExtensionName(dir, ".www") << " 修改后dir = " << dir << std::endl;
+    std::cout << "路径存在？ result = " << IsDirExisted(dir) << std::endl;
+    std::cout << "是否目录？ result = " << IsDirectory(dir) << std::endl;
+    std::cout << "创建目录？ result = " << CreateDirectory("/home/Gateway_Control_System/bin/test1") << std::endl;
+    std::cout << "创建目录？ result = " << CreateDirectory("/home/Gateway_Control_System/bin/test2") << std::endl;
+    std::cout << "删除目录？ result = " << RemoveDirectory("/home/Gateway_Control_System/bin/test1") << std::endl;
+}
+
+TEST(MODULE, FILE_OPERATION)
+{
+    std::string dir = "/home/Gateway_Control_System/bin/module_tet";
+    std::cout << "文件存在？ result = " << IsFileExisted(dir) << std::endl;
+    std::cout << "文件大小？ result = " << GetFileSize(dir) << std::endl;
+    std::cout << "文件最后修改时间？ result = " << GetFileLastWriteTime(dir) << std::endl;
+    std::cout << "删除文件？ result = " << RemoveFile("/home/Gateway_Control_System/bin/test") << std::endl;
+}
+
+
 
 int main(int argc, char** argv)
 {

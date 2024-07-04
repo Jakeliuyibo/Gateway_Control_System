@@ -84,14 +84,14 @@ BuildModuleExec(
 
     isLinkInc                       TRUE
     linkIncType                     PRIVATE
-    linkIncList                     ${PROJECT_DIR}/utility/logger ${PROJECT_DIR}/utility/configparser ${PROJECT_DIR}/utility/safecontainer ${PROJECT_DIR}/utility/systime ${PROJECT_DIR}/utility/singleton ${PROJECT_DIR}/utility/threadpool ${PROJECT_DIR}/reactor
+    linkIncList                     ${PROJECT_DIR}/utility/logger ${PROJECT_DIR}/utility/configparser ${PROJECT_DIR}/utility/safecontainer ${PROJECT_DIR}/utility/systime ${PROJECT_DIR}/utility/singleton ${PROJECT_DIR}/utility/threadpool ${PROJECT_DIR}/utility/filemanagement ${PROJECT_DIR}/reactor
 
     isLinkLib                       TRUE
     linkLibType                     PRIVATE
 
     isLinkLocalLib                  TRUE
     linkLocalLibDir                 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-    linkLocalLibNameList            logger configparser systime threadpool source
+    linkLocalLibNameList            logger configparser systime threadpool source filemanagement
 
     isLink3rdPartyLib               TRUE
     link3rdPartyLibsDir             /usr/lib/x86_64-linux-gnu
